@@ -1,5 +1,5 @@
 ---
-status: borrador
+status: aprobada
 depends_on: [001]
 ---
 
@@ -39,14 +39,14 @@ No toca las tablas de la 001 salvo ampliar el `check` de `movimientos.tipo`.
 | Tabla | Columnas clave |
 |---|---|
 | `tipos_terapia` | `id text` PK, `nombre`. Semilla: `conductual` (Terapia conductual), `psicopedagogia` (Psicopedagogía), `terapia_ocupacional` (Terapia ocupacional), `fonoaudiologia` (Fonoaudiología), `psicologia` (Psicología), `maestra_integradora` (Maestra integradora), `kinesiologia` (Kinesiología), `otra` (Otra) |
-| `profesionales` | `id`, `familia_id`, `nombre` (1-60), `tipo_id` (FK), `fuera_de_cartilla bool` default true, `creado_en` |
+| `profesionales` | `id`, `familia_id`, `nombre` (1-60), `tipo_id` (FK), `telefono` (6-30, nullable; solo dígitos, espacios, `+`, `-` y paréntesis), `fuera_de_cartilla bool` default true, `creado_en` |
 | `terapias` | `id`, `familia_id`, `hijo_id` (FK, misma familia), `profesional_id` (FK, misma familia), `tipo_id` (FK), `modalidad` (`consultorio` \| `domicilio` \| `colegio` \| `virtual`), `lugar` (0-80, nullable), `estado` (`activa` \| `terminada`), `desde date`, `hasta date` nullable, `creada_en` |
 | `horarios` | `id`, `terapia_id`, `dia_semana` (1 = lunes … 7 = domingo), `hora time`, `duracion_min` (15-240), `desde date`, `hasta date` nullable |
 | `eventos_familia` | `id`, `familia_id`, `hijo_id` nullable, `titulo` (1-60), `dia_semana`, `hora time`, `desde date`, `hasta date` nullable |
 
 - Las horas son **hora local de Argentina** (`time` sin zona); las fechas, `date` local.
-- Ninguna tabla guarda diagnósticos, informes, teléfonos ni documentos (`decisions.md`
-  `[datos]`).
+- Ninguna tabla guarda diagnósticos, informes ni documentos (`decisions.md` `[datos]`). El
+  teléfono es del profesional, no de la familia ni del hijo.
 - `movimientos.tipo` suma: `agrego_profesional`, `edito_profesional`, `agrego_terapia`,
   `edito_terapia`, `termino_terapia`, `agrego_horario`, `quito_horario`, `agrego_evento`,
   `quito_evento`.
@@ -57,14 +57,14 @@ de quien llama; si no, `ajeno`.
 
 | Función | Qué hace |
 |---|---|
-| `agregar_profesional(nombre, tipo_id, fuera_de_cartilla)` / `editar_profesional(id, …)` | Alta y edición |
+| `agregar_profesional(nombre, tipo_id, telefono, fuera_de_cartilla)` / `editar_profesional(id, …)` | Alta y edición; teléfono con formato inválido → `telefono_invalido` |
 | `agregar_terapia(hijo_id, profesional_id, tipo_id, modalidad, lugar, desde)` | Nace `activa` |
 | `editar_terapia(id, profesional_id, tipo_id, modalidad, lugar)` | Edición |
 | `terminar_terapia(id, hasta)` | Pasa a `terminada` con su fecha de fin; también cierra sus horarios abiertos con esa fecha. No borra nada |
 | `agregar_horario(terapia_id, dia_semana, hora, duracion_min, desde)` | Rechaza si la terapia está terminada |
 | `quitar_horario(id, hasta)` | Cierra el horario con fecha de fin; no lo borra (la 003 colgará cambios de los horarios) |
 | `agregar_evento(titulo, dia_semana, hora, hijo_id, desde)` / `quitar_evento(id, hasta)` | Eventos semanales de la familia |
-| `mis_terapias()` | Terapias de la familia con profesional, tipo, modalidad, lugar, estado y horarios vigentes; profesionales; eventos vigentes |
+| `mis_terapias()` | Terapias de la familia con profesional, tipo, modalidad, lugar, estado y horarios vigentes; profesionales con su teléfono; eventos vigentes |
 | `semana(lunes date)` | Los 7 días desde `lunes` (rechaza si no es lunes): por día, las ocurrencias ordenadas por hora. Una ocurrencia es un horario vigente ese día (`desde ≤ día` y `hasta` nulo o `≥ día`) de una terapia que no terminó antes de ese día, o un evento vigente. Cada ocurrencia trae tipo, hora de inicio y fin, profesional, modalidad, lugar y nombre del hijo |
 
 ### Aplicación
@@ -85,7 +85,8 @@ de quien llama; si no, `ajeno`.
   - `desde` inválido o que no es lunes → redirige a la semana que contiene esa fecha, o a la
     actual.
 - `/terapias`: lista de terapias activas (y, plegadas, las terminadas), profesionales y eventos.
-  Formularios para agregar profesional, terapia (con su primer horario) y evento.
+  Cada profesional con teléfono tiene "Llamar" (`tel:`). Formularios para agregar profesional,
+  terapia (con su primer horario) y evento.
 - `/terapias/<id>`: editar la terapia, agregar y quitar horarios, terminarla (pide fecha de fin y
   confirma).
 - Formularios con controles nativos del celular: `select` para día y tipo, `input type="time"`,
@@ -101,8 +102,8 @@ Los deterministas se agregan a `evals/run.sh`. **Los evals de la 001 siguen y de
 | # | Criterio | Eval |
 |---|---|---|
 | C1 | Compila y no rompe nada | `evals/run.sh` completo: 0 fallan |
-| C2 | La migración tiene la forma pedida | `grep` sobre `002_terapias.sql`: las 5 tablas nuevas; `enable row level security` en cada una; las 12 funciones con `security definer` y `set search_path`; ninguna `create policy … for insert/update/delete … to authenticated`; ninguna columna que contenga `diagnost`, `telefono`, `dni` o `document`; no aparece `drop` sobre tablas de la 001 |
-| C3 | Las reglas y la seguridad funcionan en la base | `npm run test:db` (aplicando 001 y 002) pasa con, como mínimo: agregar terapia con hijo o profesional de otra familia → `ajeno` · horario con `dia_semana` 0 u 8 → rechazo · duración 10 o 300 → rechazo · horario en terapia terminada → rechazo · `terminar_terapia` cierra sus horarios abiertos · `semana` con una fecha que no es lunes → rechazo · `semana` devuelve 7 días con las ocurrencias ordenadas por hora · un horario con `hasta` antes del día no aparece; con `desde` después del día, tampoco · una terapia terminada no aparece después de su `hasta` y sí antes · un evento aparece en su día · un adulto no ve terapias, profesionales ni eventos de otra familia · los dos adultos de una familia ven la misma `semana` · `anon` no lee ni ejecuta nada nuevo · `authenticated` no inserta directo en ninguna tabla nueva · `movimientos` registra los 9 tipos nuevos |
+| C2 | La migración tiene la forma pedida | `grep` sobre `002_terapias.sql`: las 5 tablas nuevas; `enable row level security` en cada una; las 12 funciones con `security definer` y `set search_path`; ninguna `create policy … for insert/update/delete … to authenticated`; ninguna columna que contenga `diagnost`, `dni` o `document`; no aparece `drop` sobre tablas de la 001 |
+| C3 | Las reglas y la seguridad funcionan en la base | `npm run test:db` (aplicando 001 y 002) pasa con, como mínimo: agregar terapia con hijo o profesional de otra familia → `ajeno` · horario con `dia_semana` 0 u 8 → rechazo · duración 10 o 300 → rechazo · horario en terapia terminada → rechazo · `terminar_terapia` cierra sus horarios abiertos · `semana` con una fecha que no es lunes → rechazo · `semana` devuelve 7 días con las ocurrencias ordenadas por hora · un horario con `hasta` antes del día no aparece; con `desde` después del día, tampoco · una terapia terminada no aparece después de su `hasta` y sí antes · un evento aparece en su día · un adulto no ve terapias, profesionales ni eventos de otra familia · los dos adultos de una familia ven la misma `semana` · `anon` no lee ni ejecuta nada nuevo · `authenticated` no inserta directo en ninguna tabla nueva · teléfono con letras → `telefono_invalido` · `movimientos` registra los 9 tipos nuevos |
 | C4 | Las fechas de la semana salen bien | `npm test` pasa con: el lunes de la semana de una fecha en hora argentina (incluido domingo 23:30 h de Buenos Aires, que en UTC ya es lunes); "Semana del 30/11 al 6/12" cruzando de mes; "Lunes 23/11"; rango "15:00 – 15:45" |
 | C5 | Las páginas nuevas sin sesión no exponen nada | Playwright con el Supabase falso: `/semana`, `/terapias` y `/familia` sin sesión redirigen a `/` (303 o 302) |
 | C6 | La vista previa no llega a producción | Sigue pasando `001·C6` |
@@ -126,18 +127,13 @@ Los deterministas se agregan a `evals/run.sh`. **Los evals de la 001 siguen y de
 - DECIDIDO por Claudio (2026-11-18): v1 = calendario primero; los cambios de turno son la 003.
 - DECIDIDO por Claudio (2026-11-18): los dos adultos ven y cambian todo (`decisions.md`
   `[familia]`).
-
-### Pendientes del operador (antes de aprobar)
-
-- **La semana como inicio**. Propuesta: con familia, `/` lleva a la semana y la familia pasa a
-  su propia pestaña. Alternativa: `/` sigue siendo la familia y la semana es una pestaña más.
-- **Tipos de terapia**. Propuesta: la lista cerrada de la semilla, con "Otra". Alternativa: texto
-  libre.
-- **Eventos de la familia**. Propuesta: eventos semanales con título y hora (p. ej. "Retirar del
-  colegio 14:30"), separados de las terapias. Alternativa: una nota de "salida del colegio" dentro
-  de cada horario.
-- **Datos del profesional**. Propuesta: nombre, especialidad y si está fuera de cartilla; sin
-  teléfono ni mail, porque el contacto ya está en WhatsApp. Alternativa: sumar teléfono.
+- DECIDIDO por Claudio (2026-11-18): con familia, la semana es el inicio; la familia pasa a su
+  pestaña.
+- DECIDIDO por Claudio (2026-11-18): tipos de terapia en lista cerrada, con "Otra".
+- DECIDIDO por Claudio (2026-11-18): eventos de la familia semanales, con título y hora, aparte de
+  las terapias.
+- DECIDIDO por Claudio (2026-11-18): del profesional, nombre, especialidad, teléfono opcional y si
+  está fuera de cartilla.
 
 ### Las decide quien implementa
 
