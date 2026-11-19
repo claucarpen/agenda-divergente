@@ -1,0 +1,19 @@
+---
+// Barra de navegación inferior de Material 3: Semana, Terapias y Familia.
+export type Seccion = 'semana' | 'terapias' | 'familia';
+interface Props { actual: Seccion }
+const { actual } = Astro.props;
+const DESTINOS: { id: Seccion; href: string; texto: string; icono: string }[] = [
+  { id: 'semana', href: '/semana', texto: 'Semana', icono: 'M7 2v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2H7Zm12 7v10H5V9h14ZM7 11h4v4H7v-4Z' },
+  { id: 'terapias', href: '/terapias', texto: 'Terapias', icono: 'M4 5h2v2H4V5Zm4 0h12v2H8V5Zm-4 6h2v2H4v-2Zm4 0h12v2H8v-2Zm-4 6h2v2H4v-2Zm4 0h12v2H8v-2Z' },
+  { id: 'familia', href: '/familia', texto: 'Familia', icono: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0-2a2 2 0 1 1 0-4 2 2 0 0 1 0 4Zm8 2a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2 20c0-3.3 3.1-6 7-6s7 2.7 7 6h-2c0-2.2-2.2-4-5-4s-5 1.8-5 4H2Zm16 0c0-1.6-.6-3-1.6-4.1 2.7.4 5.6 1.8 5.6 4.1h-4Z' },
+];
+---
+<nav class="navegacion" aria-label="Secciones">
+  {DESTINOS.map((d) => (
+    <a class:list={['navegacion-destino', { activo: d.id === actual }]} href={d.href} aria-current={d.id === actual ? 'page' : undefined}>
+      <span class="navegacion-indicador"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d={d.icono} fill="currentColor" /></svg></span>
+      <span class="navegacion-texto">{d.texto}</span>
+    </a>
+  ))}
+</nav>

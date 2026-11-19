@@ -5,7 +5,12 @@ import CrearFamilia from '../components/CrearFamilia.astro';
 import Ingreso from '../components/Ingreso.astro';
 import Inicio from '../components/Inicio.astro';
 import Invitacion from '../components/Invitacion.astro';
+import Semana from '../components/Semana.astro';
+import TerapiaDetalle from '../components/TerapiaDetalle.astro';
+import Terapias from '../components/Terapias.astro';
 import type { Familia } from '../lib/familia';
+import { sumarDias } from '../lib/fechas';
+import type { Dia, MisTerapias, Terapia } from '../lib/terapias';
 
 export const prerender = false;
 
@@ -17,12 +22,55 @@ const familia: Familia = {
 };
 const pantalla = Astro.params.pantalla;
 const url = 'https://agenda-divergente.vercel.app/invitacion/AbCdEfGhIjKlMnOpQrStUv';
+
+const LUNES = '2026-11-23';
+const HOY = '2026-11-25';
+const tipos = [
+  { id: 'conductual', nombre: 'Terapia conductual' }, { id: 'psicopedagogia', nombre: 'Psicopedagogía' },
+  { id: 'terapia_ocupacional', nombre: 'Terapia ocupacional' }, { id: 'otra', nombre: 'Otra' },
+];
+const to: Terapia = {
+  id: 't1', estado: 'activa', desde: '2025-03-01', hasta: null, modalidad: 'consultorio', lugar: 'Consultorio Belgrano',
+  tipo_id: 'terapia_ocupacional', tipo: 'Terapia ocupacional', hijo_id: 'h1', hijo: 'Mora', profesional_id: 'p1', profesional: 'Ana Ruiz',
+  telefono: '+54 11 5555-1234',
+  horarios: [{ id: 'x1', dia_semana: 2, hora: '15:00', duracion_min: 45, desde: '2025-03-01' }, { id: 'x2', dia_semana: 4, hora: '16:00', duracion_min: 45, desde: '2025-03-01' }],
+};
+const datos: MisTerapias = {
+  terapias: [
+    { ...to, id: 't0', tipo_id: 'conductual', tipo: 'Terapia conductual', profesional: 'Julián Paz', modalidad: 'domicilio', lugar: null, horarios: [{ id: 'y1', dia_semana: 1, hora: '17:00', duracion_min: 60, desde: '2025-03-01' }, { id: 'y2', dia_semana: 3, hora: '17:00', duracion_min: 60, desde: '2025-03-01' }] },
+    to,
+    { ...to, id: 't2', tipo_id: 'psicopedagogia', tipo: 'Psicopedagogía', profesional: 'Carla Méndez', lugar: 'Centro Aprender', horarios: [{ id: 'z1', dia_semana: 5, hora: '14:30', duracion_min: 50, desde: '2025-03-01' }] },
+    { ...to, id: 't3', estado: 'terminada', hasta: '2024-12-20', tipo_id: 'otra', tipo: 'Fonoaudiología', profesional: 'Sofía Lima', horarios: [] },
+  ],
+  profesionales: [
+    { id: 'p2', nombre: 'Ana Ruiz', tipo_id: 'terapia_ocupacional', tipo: 'Terapia ocupacional', telefono: '+54 11 5555-1234', fuera_de_cartilla: true },
+    { id: 'p3', nombre: 'Carla Méndez', tipo_id: 'psicopedagogia', tipo: 'Psicopedagogía', telefono: null, fuera_de_cartilla: true },
+    { id: 'p1', nombre: 'Julián Paz', tipo_id: 'conductual', tipo: 'Terapia conductual', telefono: '11 4444-0000', fuera_de_cartilla: true },
+  ],
+  eventos: [{ id: 'e1', titulo: 'Retirar del colegio', dia_semana: 5, hora: '13:45', hijo: 'Mora' }],
+  tipos,
+};
+const terapia = (inicio: string, fin: string, t: Terapia) => ({ clase: 'terapia' as const, terapia_id: t.id, horario_id: 'h', inicio, fin, tipo: t.tipo, profesional: t.profesional, modalidad: t.modalidad, lugar: t.lugar, hijo: 'Mora' });
+const [cond, , psico] = datos.terapias;
+const dias: Dia[] = [0, 1, 2, 3, 4, 5, 6].map((i) => ({ fecha: sumarDias(LUNES, i), ocurrencias: [] }));
+dias[0].ocurrencias = [terapia('17:00', '18:00', cond)];
+dias[1].ocurrencias = [terapia('15:00', '15:45', to)];
+dias[2].ocurrencias = [terapia('17:00', '18:00', cond)];
+dias[3].ocurrencias = [terapia('16:00', '16:45', to)];
+dias[4].ocurrencias = [{ clase: 'evento', evento_id: 'e1', inicio: '13:45', titulo: 'Retirar del colegio', hijo: 'Mora' }, terapia('14:30', '15:20', psico)];
+const seccion = pantalla === 'semana' || pantalla === 'semana-vacia' ? 'semana'
+  : pantalla?.startsWith('terapia') ? 'terapias'
+  : pantalla?.startsWith('inicio') ? 'familia' : undefined;
 ---
-<App titulo="Vista previa" conSesion={pantalla !== 'sin-sesion' && !pantalla?.startsWith('invitacion')}>
+<App titulo="Vista previa" conSesion={pantalla !== 'sin-sesion' && !pantalla?.startsWith('invitacion')} seccion={seccion}>
   {pantalla === 'sin-sesion' && <Ingreso />}
   {pantalla === 'crear-familia' && <CrearFamilia nombreAdulto="Claudio" />}
   {pantalla === 'inicio' && <Inicio familia={familia} />}
   {pantalla === 'inicio-invitando' && <Inicio familia={{ ...familia, adultos: [familia.adultos[0]], hijos: [] }} invitacionUrl={url} />}
   {pantalla === 'invitacion-vigente' && <Invitacion inv={{ familia: 'Los García', invita: 'Claudio', vigente: true }} next="/invitacion/x" conSesion={false} />}
   {pantalla === 'invitacion-vencida' && <Invitacion inv={{ familia: 'Los García', invita: 'Claudio', vigente: false }} next="/invitacion/x" conSesion={false} />}
+  {pantalla === 'semana' && <Semana lunes={LUNES} hoy={HOY} dias={dias} hayTerapias />}
+  {pantalla === 'semana-vacia' && <Semana lunes={LUNES} hoy={HOY} dias={dias.map((d) => ({ ...d, ocurrencias: [] }))} hayTerapias={false} />}
+  {pantalla === 'terapias' && <Terapias datos={datos} hijos={familia.hijos} hoy={HOY} />}
+  {pantalla === 'terapia-detalle' && <TerapiaDetalle t={to} profesionales={datos.profesionales} tipos={tipos} hoy={HOY} />}
 </App>

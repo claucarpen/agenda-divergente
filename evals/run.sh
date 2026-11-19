@@ -44,19 +44,19 @@ c2_migracion() {
 
 c3_base() {
   local out
-  if out=$(npm run -s test:db 2>&1); then ok "001·C3 reglas y seguridad en la base"; ev "$(printf '%s' "$out" | grep -E 'Tests ')"
+  if out=$(npm run -s test:db 2>&1); then ok "001·C3 + 002·C3 reglas y seguridad en la base"; ev "$(printf '%s' "$out" | grep -E 'Tests ')"
   else ko "001·C3 reglas y seguridad en la base"; ev "$(printf '%s' "$out" | grep -E 'FAIL|Error|Tests ' | head -8)"; fi
 }
 
 c4_whatsapp() {
   local out
-  if out=$(npm test 2>&1); then ok "001·C4 link de invitación por WhatsApp (Vitest)"; ev "$(printf '%s' "$out" | grep -E 'Tests ')"
+  if out=$(npm test 2>&1); then ok "001·C4 + 002·C4 link de WhatsApp y fechas de la semana (Vitest)"; ev "$(printf '%s' "$out" | grep -E 'Tests ')"
   else ko "001·C4 Vitest"; ev "$(printf '%s' "$out" | tail -8)"; fi
 }
 
 c5_sin_sesion() {
   local out
-  if out=$(npx playwright test --config playwright.app.config.ts 2>&1); then ok "001·C5 páginas sin sesión (Playwright)"; ev "$(printf '%s' "$out" | grep -E 'passed')"
+  if out=$(npx playwright test --config playwright.app.config.ts 2>&1); then ok "001·C5 + 002·C5 páginas sin sesión (Playwright)"; ev "$(printf '%s' "$out" | grep -E 'passed')"
   else ko "001·C5 páginas sin sesión"; ev "$(printf '%s' "$out" | tail -8)"; fi
 }
 
@@ -86,6 +86,32 @@ c9_readme() {
   if [ -z "$miss" ]; then ok "001·C9 README con las secciones del operador"; else ko "001·C9 faltan secciones:$miss"; fi
 }
 
+# --- Spec 002: terapias, horarios y la semana --------------------------------------------------
+
+MIG2=supabase/migrations/002_terapias.sql
+
+c2_002_migracion() {
+  [ -f "$MIG2" ] || { ko "002·C2 falta $MIG2"; return; }
+  local flat miss="" t f
+  flat=$(tr '\n' ' ' < "$MIG2" | tr -s ' ' | tr 'A-Z' 'a-z')
+  for t in tipos_terapia profesionales terapias horarios eventos_familia; do
+    printf '%s' "$flat" | grep -q "create table public.$t (" || miss="$miss tabla:$t"
+    printf '%s' "$flat" | grep -q "alter table public.$t enable row level security" || miss="$miss rls:$t"
+  done
+  for f in agregar_profesional editar_profesional agregar_terapia editar_terapia terminar_terapia agregar_horario \
+           quitar_horario agregar_evento quitar_evento mis_terapias terapia semana; do
+    printf '%s' "$flat" | grep -qE "create function public\.$f\([^;]*security definer set search_path = ''" || miss="$miss funcion:$f"
+  done
+  printf '%s' "$flat" | grep -qE "create policy [^;]* for (insert|update|delete|all) [^;]*to authenticated" && miss="$miss policy-escritura"
+  grep -qiE 'diagnost|dni|document' "$MIG2" && miss="$miss dato-prohibido"
+  grep -qiE 'drop (table|schema)' "$MIG2" && miss="$miss drop"
+  if [ -z "$miss" ]; then ok "002·C2 migración: 5 tablas con RLS, 12 funciones security definer, sin datos prohibidos ni drops"; else ko "002·C2 migración:$miss"; fi
+}
+
+c9_002_readme() {
+  if grep -q '^## Migración 002' README.md; then ok "002·C9 README con la sección Migración 002"; else ko "002·C9 falta la sección Migración 002"; fi
+}
+
 c0_paso0
 c1_build
 c2_migracion
@@ -96,6 +122,8 @@ c6_sin_vista_previa
 c7_secretos
 c8_contraste
 c9_readme
+c2_002_migracion
+c9_002_readme
 
 printf '\n%d pasan, %d fallan\n' "$passed" "$failed"
 [ "$failed" -eq 0 ]

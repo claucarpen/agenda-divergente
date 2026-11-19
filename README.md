@@ -30,7 +30,7 @@ npm run dev
 | `evals/run.sh` | Corre todos los criterios de las specs |
 | `npm run test:db` | Tests de la base sobre un Postgres embebido (sin Docker) |
 | `npm test` | Tests unitarios |
-| `npm run test:app` | Páginas sin sesión con Playwright contra un Supabase falso |
+| `npm run test:app` | Páginas sin sesión con Playwright contra un Supabase falso (`CHROMIUM_PATH` opcional) |
 | `npm run tokens` | Regenera los colores de Material 3 desde la semilla |
 
 ## Login con Google
@@ -46,3 +46,7 @@ Pasos del operador, una sola vez:
 ## Migración 001
 
 En Supabase → SQL Editor, pegar y correr completo `supabase/migrations/001_familias.sql`. Crea las 7 tablas con Row Level Security, las funciones y la obra social OSDE. Se corre una sola vez, antes del primer login.
+
+## Migración 002
+
+Después de la 001, en Supabase → SQL Editor, pegar y correr completo `supabase/migrations/002_terapias.sql`. Crea los tipos de terapia, profesionales, terapias, horarios y eventos de la familia, con Row Level Security, y la función que arma la semana. Se corre una sola vez.

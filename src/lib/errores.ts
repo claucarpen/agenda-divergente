@@ -13,6 +13,18 @@ const TEXTOS: Record<string, string> = {
   familia_llena: 'Esta familia ya tiene 4 adultos, el máximo.',
   hijo_ajeno: 'No encontramos a ese hijo en tu familia.',
   login: 'No pudimos entrar con Google. Probá de nuevo.',
+  ajeno: 'No encontramos eso en tu familia.',
+  tipo_invalido: 'Elegí un tipo de terapia de la lista.',
+  telefono_invalido: 'Revisá el teléfono: solo números, espacios, +, - y paréntesis.',
+  modalidad_invalida: 'Elegí una modalidad de la lista.',
+  lugar_invalido: 'El lugar puede tener hasta 80 caracteres.',
+  dia_invalido: 'Elegí un día de la semana.',
+  hora_invalida: 'Revisá la hora.',
+  duracion_invalida: 'La duración va de 15 a 240 minutos.',
+  terapia_terminada: 'Esa terapia ya terminó.',
+  fecha_invalida: 'Revisá la fecha: no puede ser anterior al inicio de la terapia.',
+  titulo_invalido: 'El título no puede quedar vacío ni pasar de 60 caracteres.',
+  no_es_lunes: 'La semana empieza un lunes.',
 };
 
 export const ERROR_GENERICO = 'Algo falló. Probá de nuevo en un rato.';

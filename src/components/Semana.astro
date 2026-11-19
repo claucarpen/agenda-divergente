@@ -1,0 +1,46 @@
+---
+// La semana día por día. Terapias y eventos de la familia se distinguen por color y por la etiqueta.
+import type { Dia } from '../lib/terapias';
+import { dondeEs } from '../lib/terapias';
+import { nombreDia, rangoHorario, sumarDias, tituloSemana } from '../lib/fechas';
+
+interface Props { lunes: string; hoy: string; dias: Dia[]; hayTerapias: boolean }
+const { lunes, hoy, dias, hayTerapias } = Astro.props;
+const anterior = sumarDias(lunes, -7);
+const siguiente = sumarDias(lunes, 7);
+const esEstaSemana = hoy >= lunes && hoy <= sumarDias(lunes, 6);
+---
+<section class="semana-cabeza">
+  <h1 class="titular">{tituloSemana(lunes)}</h1>
+  <nav class="semana-pasos" aria-label="Cambiar de semana">
+    <a class="boton boton-contorno" href={`/semana?desde=${anterior}`}>← Anterior</a>
+    <a class:list={['boton', esEstaSemana ? 'boton-tonal' : 'boton-relleno']} href="/semana" aria-current={esEstaSemana ? 'date' : undefined}>Hoy</a>
+    <a class="boton boton-contorno" href={`/semana?desde=${siguiente}`}>Siguiente →</a>
+  </nav>
+</section>
+
+{!hayTerapias && (
+  <section class="tarjeta tarjeta-tonal">
+    <h2 class="titulo">Todavía no hay terapias</h2>
+    <p class="apoyo">Cargá la primera con su día y horario, y la vas a ver acá todas las semanas.</p>
+    <a class="boton boton-relleno" href="/terapias">Cargar la primera terapia</a>
+  </section>
+)}
+
+{dias.map((d) => (
+  <section class:list={['dia', { 'dia-hoy': d.fecha === hoy }]} aria-label={nombreDia(d.fecha)}>
+    <h2 class="dia-nombre">{nombreDia(d.fecha)}{d.fecha === hoy && ' · Hoy'}</h2>
+    {d.ocurrencias.length === 0 && <p class="dia-vacio">Sin terapias</p>}
+    {d.ocurrencias.map((o) => o.clase === 'terapia' ? (
+      <a class="ocurrencia" href={`/terapias/${o.terapia_id}`}>
+        <span class="ocurrencia-hora">{rangoHorario(o.inicio, o.fin)}</span>
+        <span class="ocurrencia-texto"><strong>{o.tipo}</strong><span>{o.profesional} · {dondeEs(o.modalidad, o.lugar)}</span></span>
+      </a>
+    ) : (
+      <div class="ocurrencia ocurrencia-evento">
+        <span class="ocurrencia-hora">{o.inicio}</span>
+        <span class="ocurrencia-texto"><strong>{o.titulo}</strong><span>Familia{o.hijo ? ` · ${o.hijo}` : ''}</span></span>
+      </div>
+    ))}
+  </section>
+))}

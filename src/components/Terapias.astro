@@ -1,0 +1,175 @@
+---
+// `/terapias`: terapias activas y terminadas, profesionales, eventos de la familia y sus formularios.
+import CamposFranja from './CamposFranja.astro';
+import type { Hijo } from '../lib/familia';
+import { DIAS, DIAS_CORTOS, fechaCorta } from '../lib/fechas';
+import type { MisTerapias } from '../lib/terapias';
+import { MODALIDADES, dondeEs } from '../lib/terapias';
+
+interface Props { datos: MisTerapias; hijos: Hijo[]; hoy: string; error?: string | null }
+const { datos, hijos, hoy, error = null } = Astro.props;
+const activas = datos.terapias.filter((t) => t.estado === 'activa');
+const terminadas = datos.terapias.filter((t) => t.estado === 'terminada');
+const sinProfesionales = datos.profesionales.length === 0;
+const resumenHorarios = (hs: { dia_semana: number; hora: string }[]) =>
+  hs.length ? hs.map((h) => `${DIAS_CORTOS[h.dia_semana - 1]} ${h.hora}`).join(' · ') : 'Sin horario fijo';
+---
+<section>
+  <h1 class="titular">Terapias</h1>
+  <p class="apoyo">Lo que se repite todas las semanas. Los cambios de un día puntual llegan en la próxima versión.</p>
+</section>
+
+{error && <p class="aviso" role="alert">{error}</p>}
+
+{hijos.length === 0 && (
+  <section class="tarjeta tarjeta-tonal">
+    <p class="apoyo">Primero cargá a tu hijo o hija en Familia.</p>
+    <a class="boton boton-relleno" href="/familia">Ir a Familia</a>
+  </section>
+)}
+
+<section class="tarjeta" aria-labelledby="t-activas">
+  <h2 class="titulo" id="t-activas">En curso</h2>
+  {activas.length === 0 && <p class="apoyo">Todavía no hay terapias en curso.</p>}
+  <ul class="lista">
+    {activas.map((t) => (
+      <li>
+        <a class="item tarjeta-link" href={`/terapias/${t.id}`}>
+          <span class="item-texto">
+            <strong>{t.tipo}</strong>
+            <span class="apoyo">{t.profesional} · {dondeEs(t.modalidad, t.lugar)}{hijos.length > 1 ? ` · ${t.hijo}` : ''}</span>
+            <span class="apoyo">{resumenHorarios(t.horarios)}</span>
+          </span>
+          <span class="item-acciones" aria-hidden="true">›</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+  {hijos.length > 0 && (
+    <details class="desplegable" open={activas.length === 0 && !sinProfesionales}>
+      <summary class="boton boton-relleno boton-ancho">Agregar terapia</summary>
+      {sinProfesionales ? (
+        <p class="apoyo">Primero cargá al profesional, más abajo.</p>
+      ) : (
+        <form method="post">
+          <input type="hidden" name="accion" value="agregar_terapia" />
+          {hijos.length > 1 ? (
+            <div class="campo">
+              <label for="t-hijo">Para</label>
+              <select id="t-hijo" name="hijo_id" required>{hijos.map((h) => <option value={h.id}>{h.nombre}</option>)}</select>
+            </div>
+          ) : <input type="hidden" name="hijo_id" value={hijos[0].id} />}
+          <div class="fila-campos">
+            <div class="campo">
+              <label for="t-tipo">Terapia</label>
+              <select id="t-tipo" name="tipo_id" required>{datos.tipos.map((x) => <option value={x.id}>{x.nombre}</option>)}</select>
+            </div>
+            <div class="campo">
+              <label for="t-prof">Profesional</label>
+              <select id="t-prof" name="profesional_id" required>{datos.profesionales.map((p) => <option value={p.id}>{p.nombre}</option>)}</select>
+            </div>
+          </div>
+          <div class="fila-campos">
+            <div class="campo">
+              <label for="t-modalidad">Modalidad</label>
+              <select id="t-modalidad" name="modalidad" required>{MODALIDADES.map((m) => <option value={m.id}>{m.nombre}</option>)}</select>
+            </div>
+            <div class="campo">
+              <label for="t-lugar">Lugar (opcional)</label>
+              <input id="t-lugar" name="lugar" maxlength="80" placeholder="Consultorio Belgrano" autocomplete="off" />
+            </div>
+          </div>
+          <CamposFranja prefijo="t" />
+          <div class="campo">
+            <label for="t-desde">Desde</label>
+            <input id="t-desde" name="desde" type="date" value={hoy} required />
+          </div>
+          <button class="boton boton-relleno boton-ancho" type="submit">Guardar terapia</button>
+        </form>
+      )}
+    </details>
+  )}
+  {terminadas.length > 0 && (
+    <details class="desplegable">
+      <summary class="boton boton-texto">Terminadas ({terminadas.length})</summary>
+      <ul class="lista">
+        {terminadas.map((t) => (
+          <li>
+            <a class="item tarjeta-link" href={`/terapias/${t.id}`}>
+              <span class="item-texto"><strong>{t.tipo}</strong><span class="apoyo">{t.profesional} · hasta {t.hasta ? fechaCorta(t.hasta) : ''}</span></span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </details>
+  )}
+</section>
+
+<section class="tarjeta" aria-labelledby="t-profesionales">
+  <h2 class="titulo" id="t-profesionales">Profesionales</h2>
+  {sinProfesionales && <p class="apoyo">Todavía no cargaste profesionales.</p>}
+  <ul class="lista">
+    {datos.profesionales.map((p) => (
+      <li class="item">
+        <span class="avatar" aria-hidden="true">{p.nombre.charAt(0).toUpperCase()}</span>
+        <span class="item-texto"><strong>{p.nombre}</strong><span class="apoyo">{p.tipo}{p.fuera_de_cartilla ? ' · Fuera de cartilla' : ''}</span></span>
+        {p.telefono && <span class="item-acciones"><a class="boton boton-texto" href={`tel:${p.telefono.replace(/[^0-9+]/g, '')}`}>Llamar</a></span>}
+      </li>
+    ))}
+  </ul>
+  <details class="desplegable" open={sinProfesionales}>
+    <summary class="boton boton-contorno boton-ancho">Agregar profesional</summary>
+    <form method="post">
+      <input type="hidden" name="accion" value="agregar_profesional" />
+      <div class="campo">
+        <label for="p-nombre">Nombre</label>
+        <input id="p-nombre" name="nombre" required maxlength="60" autocomplete="off" />
+      </div>
+      <div class="fila-campos">
+        <div class="campo">
+          <label for="p-tipo">Especialidad</label>
+          <select id="p-tipo" name="tipo_id" required>{datos.tipos.map((x) => <option value={x.id}>{x.nombre}</option>)}</select>
+        </div>
+        <div class="campo">
+          <label for="p-tel">Teléfono (opcional)</label>
+          <input id="p-tel" name="telefono" type="tel" maxlength="30" autocomplete="off" inputmode="tel" />
+        </div>
+      </div>
+      <label class="casilla"><input type="checkbox" name="fuera_de_cartilla" checked /> Fuera de cartilla</label>
+      <button class="boton boton-relleno boton-ancho" type="submit">Guardar profesional</button>
+    </form>
+  </details>
+</section>
+
+<section class="tarjeta" aria-labelledby="t-eventos">
+  <div class="tarjeta-cabeza">
+    <h2 class="titulo" id="t-eventos">Eventos de la familia</h2>
+    <span class="etiqueta etiqueta-evento">Familia</span>
+  </div>
+  <p class="apoyo chico">Lo que no es terapia pero cruza la semana, como retirar del colegio.</p>
+  <ul class="lista">
+    {datos.eventos.map((e) => (
+      <li class="item">
+        <span class="item-texto"><strong>{e.titulo}</strong><span class="apoyo">{DIAS[e.dia_semana - 1]} {e.hora}{e.hijo ? ` · ${e.hijo}` : ''}</span></span>
+        <form method="post" class="item-acciones">
+          <input type="hidden" name="accion" value="quitar_evento" />
+          <input type="hidden" name="id" value={e.id} />
+          <button class="boton boton-texto" type="submit">Quitar</button>
+        </form>
+      </li>
+    ))}
+  </ul>
+  <details class="desplegable">
+    <summary class="boton boton-contorno boton-ancho">Agregar evento</summary>
+    <form method="post">
+      <input type="hidden" name="accion" value="agregar_evento" />
+      <div class="campo">
+        <label for="e-titulo">Qué</label>
+        <input id="e-titulo" name="titulo" required maxlength="60" placeholder="Retirar del colegio" autocomplete="off" />
+      </div>
+      <CamposFranja prefijo="e" conDuracion={false} />
+      {hijos.length > 0 && <input type="hidden" name="hijo_id" value={hijos.length === 1 ? hijos[0].id : ''} />}
+      <button class="boton boton-relleno boton-ancho" type="submit">Guardar evento</button>
+    </form>
+  </details>
+</section>

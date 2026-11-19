@@ -1,0 +1,100 @@
+---
+// `/terapias/<id>`: editar la terapia, sus horarios semanales y terminarla.
+import CamposFranja from './CamposFranja.astro';
+import { DIAS, fechaCorta, sumarDias } from '../lib/fechas';
+import type { Profesional, Terapia, TipoTerapia } from '../lib/terapias';
+import { MODALIDADES, dondeEs } from '../lib/terapias';
+
+interface Props { t: Terapia; profesionales: Profesional[]; tipos: TipoTerapia[]; hoy: string; error?: string | null }
+const { t, profesionales, tipos, hoy, error = null } = Astro.props;
+const activa = t.estado === 'activa';
+const finHorario = (duracion: number, hora: string) => {
+  const [h, m] = hora.split(':').map(Number);
+  const total = h * 60 + m + duracion;
+  return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+};
+---
+<section>
+  <a class="boton boton-texto" href="/terapias">← Terapias</a>
+  <h1 class="titular">{t.tipo}</h1>
+  <p class="apoyo">{t.profesional} · {dondeEs(t.modalidad, t.lugar)} · {t.hijo}</p>
+  <p class="apoyo chico">{activa ? `En curso desde el ${fechaCorta(t.desde)}` : `Terminó el ${t.hasta ? fechaCorta(t.hasta) : ''}`}</p>
+</section>
+
+{error && <p class="aviso" role="alert">{error}</p>}
+
+<section class="tarjeta" aria-labelledby="t-horarios">
+  <h2 class="titulo" id="t-horarios">Horarios de cada semana</h2>
+  {t.horarios.length === 0 && <p class="apoyo">Sin horario fijo.</p>}
+  <ul class="lista">
+    {t.horarios.map((h) => (
+      <li class="item">
+        <span class="item-texto"><strong>{DIAS[h.dia_semana - 1]}</strong><span class="apoyo">{h.hora} – {finHorario(h.duracion_min, h.hora)}</span></span>
+        {activa && (
+          <form method="post" class="item-acciones">
+            <input type="hidden" name="accion" value="quitar_horario" />
+            <input type="hidden" name="horario_id" value={h.id} />
+            <button class="boton boton-texto" type="submit">Quitar</button>
+          </form>
+        )}
+      </li>
+    ))}
+  </ul>
+  {activa && (
+    <details class="desplegable" open={t.horarios.length === 0}>
+      <summary class="boton boton-contorno boton-ancho">Agregar horario</summary>
+      <form method="post">
+        <input type="hidden" name="accion" value="agregar_horario" />
+        <CamposFranja prefijo="h" />
+        <button class="boton boton-relleno boton-ancho" type="submit">Guardar horario</button>
+      </form>
+    </details>
+  )}
+  {activa && <p class="apoyo chico">Quitar un horario lo saca desde hoy; las semanas pasadas no cambian.</p>}
+</section>
+
+{activa && (
+  <section class="tarjeta" aria-labelledby="t-editar">
+    <h2 class="titulo" id="t-editar">Datos de la terapia</h2>
+    <form method="post">
+      <input type="hidden" name="accion" value="editar_terapia" />
+      <div class="fila-campos">
+        <div class="campo">
+          <label for="d-tipo">Terapia</label>
+          <select id="d-tipo" name="tipo_id" required>{tipos.map((x) => <option value={x.id} selected={x.id === t.tipo_id}>{x.nombre}</option>)}</select>
+        </div>
+        <div class="campo">
+          <label for="d-prof">Profesional</label>
+          <select id="d-prof" name="profesional_id" required>{profesionales.map((p) => <option value={p.id} selected={p.id === t.profesional_id}>{p.nombre}</option>)}</select>
+        </div>
+      </div>
+      <div class="fila-campos">
+        <div class="campo">
+          <label for="d-modalidad">Modalidad</label>
+          <select id="d-modalidad" name="modalidad" required>{MODALIDADES.map((m) => <option value={m.id} selected={m.id === t.modalidad}>{m.nombre}</option>)}</select>
+        </div>
+        <div class="campo">
+          <label for="d-lugar">Lugar (opcional)</label>
+          <input id="d-lugar" name="lugar" maxlength="80" value={t.lugar ?? ''} autocomplete="off" />
+        </div>
+      </div>
+      <button class="boton boton-tonal boton-ancho" type="submit">Guardar cambios</button>
+    </form>
+  </section>
+)}
+
+{activa && (
+  <section class="tarjeta" aria-labelledby="t-terminar">
+    <h2 class="titulo" id="t-terminar">Terminar la terapia</h2>
+    <p class="apoyo chico">Deja de aparecer en la semana después de la fecha de fin. No se borra: queda en "Terminadas".</p>
+    <form method="post">
+      <input type="hidden" name="accion" value="terminar_terapia" />
+      <div class="campo">
+        <label for="d-hasta">Último día</label>
+        <input id="d-hasta" name="hasta" type="date" value={sumarDias(hoy, 0)} min={t.desde} required />
+      </div>
+      <label class="casilla"><input type="checkbox" name="confirmo" required /> Confirmo que esta terapia termina</label>
+      <button class="boton boton-peligro boton-ancho" type="submit">Terminar terapia</button>
+    </form>
+  </section>
+)}
