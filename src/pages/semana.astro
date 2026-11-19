@@ -1,0 +1,38 @@
+---
+// La semana a la vista. `?desde=AAAA-MM-DD`; si no es lunes, redirige al lunes de esa semana.
+import App from '../layouts/App.astro';
+import Semana from '../components/Semana.astro';
+import { esFechaIso, hoyEnArgentina, lunesDe } from '../lib/fechas';
+import { exigirFamilia } from '../lib/sesion';
+import type { Dia } from '../lib/terapias';
+
+export const prerender = false;
+
+const ctx = await exigirFamilia(Astro);
+if (!ctx.ok) return ctx.respuesta;
+const { supabase } = ctx;
+
+const hoy = hoyEnArgentina();
+const pedido = Astro.url.searchParams.get('desde');
+if (pedido !== null) {
+  if (!esFechaIso(pedido)) return Astro.redirect('/semana', 303);
+  if (lunesDe(pedido) !== pedido) return Astro.redirect(`/semana?desde=${lunesDe(pedido)}`, 303);
+}
+const lunes = pedido ?? lunesDe(hoy);
+
+const [s, m] = await Promise.all([supabase.rpc('semana', { lunes }), supabase.rpc('mis_terapias')]);
+const falla = !!(s.error || m.error);
+if (falla) Astro.response.status = 503;
+const dias = (s.data ?? []) as Dia[];
+const hayTerapias = ((m.data?.terapias ?? []) as unknown[]).length > 0;
+---
+<App titulo="Semana" conSesion seccion="semana">
+  {falla ? (
+    <section class="tarjeta">
+      <h1 class="titulo">Algo falló</h1>
+      <p class="apoyo">No pudimos cargar la semana. Probá de nuevo en un rato.</p>
+    </section>
+  ) : (
+    <Semana lunes={lunes} hoy={hoy} dias={dias} hayTerapias={hayTerapias} />
+  )}
+</App>

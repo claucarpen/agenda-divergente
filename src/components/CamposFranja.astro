@@ -1,0 +1,24 @@
+---
+// Día, hora y duración de un horario semanal.
+import { DIAS } from '../lib/fechas';
+interface Props { prefijo: string; conDuracion?: boolean }
+const { prefijo, conDuracion = true } = Astro.props;
+---
+<div class={conDuracion ? 'fila-campos-3' : 'fila-campos'}>
+  <div class="campo">
+    <label for={`${prefijo}-dia`}>Día</label>
+    <select id={`${prefijo}-dia`} name="dia_semana" required>
+      {DIAS.map((d, i) => <option value={i + 1}>{d}</option>)}
+    </select>
+  </div>
+  <div class="campo">
+    <label for={`${prefijo}-hora`}>Hora</label>
+    <input id={`${prefijo}-hora`} name="hora" type="time" required />
+  </div>
+  {conDuracion && (
+    <div class="campo">
+      <label for={`${prefijo}-duracion`}>Minutos</label>
+      <input id={`${prefijo}-duracion`} name="duracion_min" type="number" min="15" max="240" step="5" value="45" required inputmode="numeric" />
+    </div>
+  )}
+</div>

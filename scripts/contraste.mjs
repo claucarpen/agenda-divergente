@@ -1,5 +1,5 @@
 // Contraste WCAG de los pares de color de texto sobre fondo que usan los botones y los textos
-// (spec 001, rúbrica C8). Lee src/styles/tokens.css. Sale con 1 si algún par baja de 4.5:1.
+// (rúbrica C8 de cada spec). Lee src/styles/tokens.css. Sale con 1 si algún par baja de 4.5:1.
 import { readFileSync } from 'node:fs';
 
 const css = readFileSync('src/styles/tokens.css', 'utf8');
@@ -19,6 +19,11 @@ const PARES = [
   ['on-primary-container', 'primary-container', 'texto del encabezado'],
   ['on-surface-variant', 'surface-container-low', 'texto de apoyo en tarjeta'],
   ['on-error-container', 'error-container', 'aviso de error'],
+  ['on-tertiary-container', 'tertiary-container', 'evento de la familia en la semana (spec 002)'],
+  ['on-tertiary', 'tertiary', 'etiqueta "Familia" (spec 002)'],
+  ['on-error', 'error', 'botón "Terminar terapia" (spec 002)'],
+  ['on-surface-variant', 'surface-container', 'destino inactivo de la navegación (spec 002)'],
+  ['primary', 'surface-container-low', 'nombre del día de hoy (spec 002)'],
 ];
 let falla = false;
 for (const [nombre, t] of [['claro', leer(claro)], ['oscuro', leer(oscuro)]]) {

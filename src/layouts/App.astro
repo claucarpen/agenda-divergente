@@ -1,10 +1,11 @@
 ---
-// Layout único de la app: barra superior y contenido centrado, celular primero.
+// Layout único de la app: barra superior, contenido centrado y, con familia, la navegación inferior.
 import '../styles/app.css';
 import Marca from '../components/Marca.astro';
+import Navegacion, { type Seccion } from '../components/Navegacion.astro';
 
-interface Props { titulo: string; conSesion?: boolean }
-const { titulo, conSesion = false } = Astro.props;
+interface Props { titulo: string; conSesion?: boolean; seccion?: Seccion }
+const { titulo, conSesion = false, seccion } = Astro.props;
 ---
 <!doctype html>
 <html lang="es-AR">
@@ -16,7 +17,7 @@ const { titulo, conSesion = false } = Astro.props;
     <title>{titulo} · Agenda Divergente</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
-  <body>
+  <body class:list={{ 'con-navegacion': !!seccion }}>
     <header class="barra">
       <a class="barra-marca" href="/"><Marca /> Agenda Divergente</a>
       {conSesion && (
@@ -28,5 +29,6 @@ const { titulo, conSesion = false } = Astro.props;
     <main class="contenido">
       <slot />
     </main>
+    {seccion && <Navegacion actual={seccion} />}
   </body>
 </html>

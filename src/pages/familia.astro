@@ -1,0 +1,35 @@
+---
+// La familia: adultos, invitar a otro adulto e hijos (lo que en la spec 001 era `/` con familia).
+import App from '../layouts/App.astro';
+import Inicio from '../components/Inicio.astro';
+import { textoDeError } from '../lib/errores';
+import { exigirFamilia } from '../lib/sesion';
+
+export const prerender = false;
+
+const ctx = await exigirFamilia(Astro);
+if (!ctx.ok) return ctx.respuesta;
+const { supabase } = ctx;
+let { familia } = ctx;
+
+let invitacionUrl: string | null = null;
+let error: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const accion = form.get('accion');
+  const texto = (k: string) => String(form.get(k) ?? '');
+  if (accion === 'agregar_hijo') {
+    const r = await supabase.rpc('agregar_hijo', { nombre: texto('nombre'), obra_social_id: texto('obra_social_id'), plan: texto('plan') || null });
+    if (!r.error) return Astro.redirect('/familia', 303);
+    error = textoDeError(r.error);
+  } else if (accion === 'invitar') {
+    const r = await supabase.rpc('crear_invitacion');
+    if (!r.error) invitacionUrl = new URL(`/invitacion/${r.data as string}`, Astro.url.origin).href;
+    else error = textoDeError(r.error);
+  }
+}
+---
+<App titulo={familia.nombre} conSesion seccion="familia">
+  <Inicio familia={familia} invitacionUrl={invitacionUrl} error={error} />
+</App>

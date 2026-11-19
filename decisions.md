@@ -57,3 +57,15 @@
 **Qué se decide**: `tests/db/pg.ts` usa `createPostgresUser` cuando el proceso es root; `playwright.app.config.ts` y `scripts/capturas.mjs` aceptan `CHROMIUM_PATH` opcional.
 **Por qué**: el agente corre en un contenedor como root, donde Postgres no arranca y la versión de Playwright no coincide con el Chromium instalado. En la máquina del operador nada cambia.
 **La invalidaría**: que los tests corran solo en la máquina del operador o en un CI propio.
+
+## 2026-11-18 · [stack] La semana y las terapias también sin React: links y formularios POST
+
+**Qué se decide**: cambiar de semana son links (`?desde=`); cargar, quitar y terminar son formularios POST que redirigen. Sin islas de React en la spec 002.
+**Por qué**: la spec 002 dejaba la elección a quien implementa. Nada de la semana necesita estado en el navegador; con formularios funciona igual en celulares viejos y sin JavaScript, y la confirmación de "Terminar terapia" es una casilla obligatoria en lugar de un diálogo.
+**La invalidaría**: una interacción que no se resuelva con un recargo de página (por ejemplo, arrastrar un turno en la spec 003).
+
+## 2026-11-18 · [diseño] Navegación inferior sticky al final del body, no fija
+
+**Qué se decide**: `.navegacion` usa `position: sticky; bottom: 0` como último elemento del body.
+**Por qué**: queda pegada abajo al hacer scroll igual que una barra fija, pero no tapa el último contenido y no obliga a reservar un margen inferior adivinado.
+**La invalidaría**: un navegador objetivo donde sticky no funcione bien al final del body.

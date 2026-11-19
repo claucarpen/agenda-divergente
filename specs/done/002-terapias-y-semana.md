@@ -1,5 +1,5 @@
 ---
-status: aprobada
+status: implementada
 depends_on: [001]
 ---
 
@@ -162,3 +162,47 @@ del operador siguiendo el README.
 | Vista de mes | Los adultos lo extrañan después de usar la semana |
 | Exportar a Google Calendar | Los adultos lo piden |
 | Borrar una terapia (en lugar de terminarla) | Se cargó una por error y molesta |
+
+## Evidencia de implementación (2026-11-18)
+
+Rama `spec/002-terapias`. Decisiones nuevas: `decisions.md`, entradas `[stack]` (sin React) y
+`[diseño]` (navegación sticky) del 2026-11-18.
+
+### `evals/run.sh`
+
+```
+PASS 001·C0 Postgres embebido + shim de Supabase
+PASS 001·C1 el proyecto compila
+PASS 001·C2 migración: 7 tablas con RLS, 8 funciones security definer, sin datos prohibidos
+PASS 001·C3 + 002·C3 reglas y seguridad en la base
+     |       Tests  46 passed (46)
+PASS 001·C4 + 002·C4 link de WhatsApp y fechas de la semana (Vitest)
+     |       Tests  6 passed (6)
+PASS 001·C5 + 002·C5 páginas sin sesión (Playwright)
+     |   7 passed (4.2s)
+PASS 001·C6 la vista previa no llega a producción
+PASS 001·C7 sin secretos
+PASS 001·C8 (parte automática) contraste AA de todos los pares, claro y oscuro
+PASS 001·C9 README con las secciones del operador
+PASS 002·C2 migración: 5 tablas con RLS, 12 funciones security definer, sin datos prohibidos ni drops
+PASS 002·C9 README con la sección Migración 002
+
+12 pasan, 0 fallan
+```
+
+C1 = el archivo completo en 0 fallos. C6 y C7 siguen en `001·C6` y `001·C7`. Los 18 tests nuevos de
+la base están en `tests/db/terapias.test.ts`; los 4 de fechas, en `src/lib/fechas.test.ts`; los 4
+de redirección, en `tests/app/sin-sesion.spec.ts`.
+
+### C8 — rúbrica
+
+Capturas en `docs/capturas/002/` (4 pantallas a 375 y 1280 px, y a 375 px en modo oscuro); las de
+la 001 se rehicieron en `docs/capturas/001/` con la navegación inferior.
+
+1. Hoy se ve en un bloque con fondo propio y "· Hoy" en color primario. ✓
+2. Terapias en verde agua; eventos de la familia en celeste con borde izquierdo y "Familia". ✓
+3. "Anterior", "Hoy" y "Siguiente" de 48 px; la navegación inferior con destinos de 56 px. ✓
+4. "Agregar terapia" entra en una pantalla: tipo, profesional, modalidad, lugar, día, hora,
+   minutos y desde. ✓
+5. Mismo lenguaje visual y tokens que la 001; contraste AA de los 5 pares nuevos (mínimo 5,88:1);
+   fechas "Lunes 23/11", "Semana del 23 al 29/11". ✓
