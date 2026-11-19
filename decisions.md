@@ -26,3 +26,16 @@
 **Qué se decide**: los avisos inmediatos (cambios) y programados (vencimientos, cron diario de Vercel) salen por Web Push con claves VAPID propias.
 **Por qué**: gratis y sin proveedor intermedio. En Android llega con el navegador cerrado; en iPhone requiere la app instalada en la pantalla de inicio (iOS 16.4+). El mail exige dominio propio antes de validar; WhatsApp tiene costo por mensaje y dependencia de Meta.
 **La invalidaría**: que un padre de prueba no reciba los avisos de forma confiable.
+
+## 2026-11-18 · [gates] Los agentes pushean ramas y mergean con el OK explícito del operador
+
+**Qué se decide**: los agentes pushean sus ramas y abren PR; mergean un PR solo cuando el operador lo pide para ese PR. Nunca pushean directo a `main` ni fuerzan un push.
+**Por qué**: decisión del operador (2026-11-18): en Nos Vemos el push y el merge les estaban negados a los agentes y eso lo obligaba a hacerlos a mano; la revisión humana se mantiene en el OK del merge.
+**Reemplaza a**: la negación de `git push` y `gh pr merge` heredada de Nos Vemos en `.claude/settings.json`.
+**La invalidaría**: un merge hecho sin el OK del operador, o un push directo a `main`.
+
+## 2026-11-18 · [diseño] Identidad visual moderna y fresca, inspirada en Material Design 3 (Material You)
+
+**Qué se decide**: lenguaje visual de Material 3: color tonal derivado de un color semilla con roles (primary, secondary, surface, container), esquinas redondeadas, elevación tonal en lugar de sombras duras, tipografía sans moderna, mucho aire. Nada retro ni pixel art.
+**Por qué**: decisión del operador (2026-11-18): no quiere la estética retrogaming de Nos Vemos sino algo limpio y fresco; además, Material es el lenguaje que reconocen los usuarios de Android y se lee bien en iPhone.
+**La invalidaría**: que el operador elija otra dirección sobre las capturas de la spec 001.

@@ -21,8 +21,9 @@ brain esté al alcance.
 
 - **Gate 1**: ninguna implementación arranca sin spec aprobada (`status: aprobada` en su
   frontmatter, puesto por el operador).
-- **Gate 2**: el merge lo hace una persona. Los agentes trabajan en ramas, nunca pushean a `main`
-  ni mergean: `.claude/settings.json` les niega los dos comandos.
+- **Gate 2**: el merge lo decide una persona. Los agentes trabajan en ramas, las pushean y abren
+  el PR; nunca pushean directo a `main` ni fuerzan un push (`.claude/settings.json` niega el
+  forzado). Mergean solo con el OK explícito del operador para ese PR (`decisions.md`, `[gates]`).
 - El PR lleva la evidencia de los evals. El que lo revisa no reporta nada que no pueda citar
   textualmente con `archivo:línea`, ni nada sin nombrar qué se rompe.
 

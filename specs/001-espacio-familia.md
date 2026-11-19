@@ -65,7 +65,7 @@ políticas de insert/update/delete directas en ninguna tabla, y solo lee su prop
 | `mi_familia()` | miembro | Nombre de la familia, miembros **solo con nombre**, hijos (nombre, obra social, plan) |
 | `crear_invitacion()` | miembro | Genera un código de ≥128 bits en base64url (≥22 caracteres), vence a los 7 días, un solo uso. Registra `invito`. Devuelve el código |
 | `invitacion_publica(codigo)` | anon y authenticated | Solo nombre de la familia y nombre de quien invita, y si está vigente. Nada más |
-| `aceptar_invitacion(codigo)` | authenticated | Rechaza si venció, si ya se usó, si quien acepta ya es miembro de otra familia o si la familia ya tiene el tope de adultos. Suma como miembro, marca la invitación usada, registra `se_unio`. Si ya es miembro de esa familia, no hace nada |
+| `aceptar_invitacion(codigo)` | authenticated | Rechaza si venció, si ya se usó, si quien acepta ya es miembro de otra familia o si la familia ya tiene 4 adultos. Suma como miembro, marca la invitación usada, registra `se_unio`. Si ya es miembro de esa familia, no hace nada |
 | `agregar_hijo(nombre, obra_social_id, plan)` | miembro | Valida largos y obra social. Registra `agrego_hijo` |
 | `editar_hijo(hijo_id, nombre, obra_social_id, plan)` | miembro de esa familia | Registra `edito_hijo` |
 
@@ -101,7 +101,7 @@ Los deterministas se agregan a `evals/run.sh`, una función por criterio.
 | C0 | Postgres embebido con el shim de Supabase funciona | `npm run test:db` incluye y pasa el test del paso 0 |
 | C1 | Compila | `npm ci && npm run build` sale con código 0 |
 | C2 | La migración tiene la forma pedida | `grep` sobre `001_familias.sql`: las 7 tablas; `enable row level security` en cada una; las 8 funciones con `security definer` y `set search_path`; ninguna `create policy … for insert/update/delete … to authenticated`; ninguna columna que contenga `diagnost`, `nacimiento`, `dni` o `document` |
-| C3 | Las reglas y la seguridad funcionan en la base | `npm run test:db` pasa con, como mínimo: crear familia → creador miembro · crear una segunda familia siendo miembro → rechazo · invitación con código de ≥22 caracteres · aceptar invitación válida → miembro, invitación usada · aceptar dos veces la misma → la segunda rechaza (si es otra persona) o no hace nada (si es la misma) · aceptar vencida → rechazo · aceptar siendo miembro de otra familia → rechazo · superar el tope de adultos → rechazo · `mi_familia` no expone emails · un usuario no ve la familia ni los hijos de otra · `agregar_hijo` con obra social inexistente → rechazo · `editar_hijo` de otra familia → rechazo · `invitacion_publica` no expone nada más que nombre de familia, nombre de quien invita y vigencia · `anon` no puede leer ninguna tabla · `authenticated` no puede insertar directo en ninguna tabla · `movimientos` registra los 5 tipos |
+| C3 | Las reglas y la seguridad funcionan en la base | `npm run test:db` pasa con, como mínimo: crear familia → creador miembro · crear una segunda familia siendo miembro → rechazo · invitación con código de ≥22 caracteres · aceptar invitación válida → miembro, invitación usada · aceptar dos veces la misma → la segunda rechaza (si es otra persona) o no hace nada (si es la misma) · aceptar vencida → rechazo · aceptar siendo miembro de otra familia → rechazo · un quinto adulto → rechazo · `mi_familia` no expone emails · un usuario no ve la familia ni los hijos de otra · `agregar_hijo` con obra social inexistente → rechazo · `editar_hijo` de otra familia → rechazo · `invitacion_publica` no expone nada más que nombre de familia, nombre de quien invita y vigencia · `anon` no puede leer ninguna tabla · `authenticated` no puede insertar directo en ninguna tabla · `movimientos` registra los 5 tipos |
 | C4 | El link de invitación sale bien | `npm test` (Vitest) pasa con: el link de WhatsApp empieza con `https://wa.me/?text=` y decodifica al texto exacto; "¿", "ñ" y "&" sobreviven codificados |
 | C5 | Las páginas sin sesión se ven y funcionan | Playwright con variables de Supabase falsas: `/` sin sesión muestra "Entrar con Google"; `/invitacion/<inexistente>` responde 404 con "Esta invitación no existe"; a 375 px, sin scroll horizontal |
 | C6 | La vista previa no llega a producción | En la salida del build no existe la ruta de vista previa (grep en `.vercel/output`) |
@@ -116,6 +116,9 @@ Los deterministas se agregan a `evals/run.sh`, una función por criterio.
 3. Español rioplatense en todo.
 4. Ningún dato del hijo más allá de nombre, obra social y plan aparece en pantalla.
 5. Tono cálido y sereno: nada que se lea como clínico ni como burocrático.
+6. Lenguaje visual de Material 3 (`decisions.md` `[diseño]`): roles de color tonales derivados de
+   un color semilla (declarados como variables CSS), esquinas redondeadas, elevación tonal,
+   tipografía sans moderna; ningún rasgo retro ni pixel art.
 
 ## Decisiones
 
@@ -124,19 +127,19 @@ Los deterministas se agregan a `evals/run.sh`, una función por criterio.
 - DECIDIDO por Claudio (2026-11-18): login solo con Google; los dos padres con el mismo perfil.
 - DECIDIDO por Claudio (2026-11-18): del hijo se guarda solo nombre de pila o apodo, obra social y
   plan.
-
-### Pendientes del operador (antes de aprobar)
-
-- **Tope de adultos por familia**. Propuesta: 4 (dos padres y, si hiciera falta, parejas de
-  padres separados). Alternativa: 2.
-- **Vencimiento de la invitación**. Propuesta: 7 días, un solo uso.
-- **Identidad visual**. Propuesta: la elige quien implementa dentro de la rúbrica C8 y la registra
-  en `decisions.md`; el operador la ajusta sobre las capturas.
+- DECIDIDO por Claudio (2026-11-18): tope de 4 adultos por familia.
+- DECIDIDO por Claudio (2026-11-18): la invitación vence a los 7 días y es de un solo uso.
+- DECIDIDO por Claudio (2026-11-18): identidad visual inspirada en Material Design 3 (Material
+  You), moderna, limpia y fresca; nada retro (`decisions.md` `[diseño]`). Quien implementa elige
+  el color semilla y la tipografía, los registra en `decisions.md`, y el operador los ajusta sobre
+  las capturas.
 
 ### Las decide quien implementa
 
 - División en componentes: lo más simple que pase los evals; React solo donde haya
   interactividad.
+- Cómo se implementa Material 3: tokens propios en CSS o una librería, si se registra en
+  `decisions.md` por qué y su estado de mantenimiento verificado ese día.
 - Cómo se generan los códigos dentro de la función, respetando ≥128 bits.
 
 ### Condiciones de parada (el agente para y pregunta)
