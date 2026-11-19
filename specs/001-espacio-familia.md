@@ -1,5 +1,5 @@
 ---
-status: borrador
+status: aprobada
 depends_on: []
 ---
 
