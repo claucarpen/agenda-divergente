@@ -2,7 +2,7 @@
 // La semana día por día. Terapias y eventos de la familia se distinguen por color y por la etiqueta.
 import type { Dia } from '../lib/terapias';
 import { dondeEs } from '../lib/terapias';
-import { nombreDia, rangoHorario, sumarDias, tituloSemana } from '../lib/fechas';
+import { diaCorto, nombreDia, rangoHorario, sumarDias, tituloSemana } from '../lib/fechas';
 
 interface Props { lunes: string; hoy: string; dias: Dia[]; hayTerapias: boolean }
 const { lunes, hoy, dias, hayTerapias } = Astro.props;
@@ -32,9 +32,17 @@ const esEstaSemana = hoy >= lunes && hoy <= sumarDias(lunes, 6);
     <h2 class="dia-nombre">{nombreDia(d.fecha)}{d.fecha === hoy && ' · Hoy'}</h2>
     {d.ocurrencias.length === 0 && <p class="dia-vacio">Sin terapias</p>}
     {d.ocurrencias.map((o) => o.clase === 'terapia' ? (
-      <a class="ocurrencia" href={`/terapias/${o.terapia_id}`}>
-        <span class="ocurrencia-hora">{rangoHorario(o.inicio, o.fin)}</span>
-        <span class="ocurrencia-texto"><strong>{o.tipo}</strong><span>{o.profesional} · {dondeEs(o.modalidad, o.lugar)}</span></span>
+      <a class:list={['ocurrencia', { 'ocurrencia-cambiada': o.estado === 'cambiado', 'ocurrencia-cancelada': o.estado === 'cancelado' }]}
+         href={`/turno?horario=${o.horario_id}&fecha=${o.fecha_turno ?? d.fecha}`}
+         aria-label={`${o.tipo}, ${o.estado === 'cancelado' ? 'no hay' : rangoHorario(o.inicio, o.fin)}. Cambiar este turno`}>
+        <span class="ocurrencia-hora">{o.estado === 'cancelado' ? <s>{o.inicio}</s> : rangoHorario(o.inicio, o.fin)}</span>
+        <span class="ocurrencia-texto">
+          <strong>{o.tipo}</strong>
+          {o.estado === 'cancelado' && <span class="etiqueta etiqueta-cancelado">No hay</span>}
+          {o.estado === 'cambiado' && <span class="etiqueta etiqueta-cambiado">Cambiado · antes {o.original_fecha === d.fecha ? '' : `${diaCorto(o.original_fecha!)} `}{o.original_inicio}</span>}
+          <span>{o.profesional} · {dondeEs(o.modalidad, o.lugar)}</span>
+          {o.nota && <span class="ocurrencia-nota">{o.nota}</span>}
+        </span>
       </a>
     ) : (
       <div class="ocurrencia ocurrencia-evento">

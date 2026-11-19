@@ -1,0 +1,93 @@
+---
+// Un turno puntual: `?horario=<uuid>&fecha=AAAA-MM-DD`. Cambiarlo una vez, por un período, o deshacer.
+import App from '../layouts/App.astro';
+import CambiarTurno from '../components/CambiarTurno.astro';
+import { avisarFamilia } from '../lib/avisar-familia';
+import { claveDeError, textoDeError } from '../lib/errores';
+import { esFechaIso, lunesDe } from '../lib/fechas';
+import { campo, campoNumero, exigirFamilia, miNombre } from '../lib/sesion';
+import type { Turno } from '../lib/terapias';
+import { avisoAnular, avisoCancelarUnaVez, avisoMoverUnaVez, avisoPeriodo } from '../lib/textos-aviso';
+
+export const prerender = false;
+
+const ctx = await exigirFamilia(Astro);
+if (!ctx.ok) return ctx.respuesta;
+const { supabase, familia } = ctx;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const horario = Astro.url.searchParams.get('horario') ?? '';
+const fecha = Astro.url.searchParams.get('fecha');
+const valido = UUID_RE.test(horario) && esFechaIso(fecha);
+
+const leer = async () => {
+  const r = await supabase.rpc('turno', { horario_id: horario, fecha });
+  return r.error ? { error: r.error } : { t: r.data as Turno };
+};
+
+let estado: 'ok' | 'no_existe' | 'falla' = 'no_existe';
+let t: Turno | null = null;
+let error: string | null = null;
+
+if (valido) {
+  const r = await leer();
+  if ('t' in r) { estado = 'ok'; t = r.t!; }
+  else if (claveDeError(r.error) === 'ajeno') estado = 'no_existe';
+  else estado = 'falla';
+}
+
+if (t && Astro.request.method === 'POST') {
+  const f = await Astro.request.formData();
+  const accion = f.get('accion');
+  const quien = miNombre(familia);
+  const tipo = t.terapia.tipo;
+  let resultado: { error: { message: string } | null } = { error: null };
+  let aviso = null;
+  let destino = `/semana?desde=${lunesDe(t.fecha)}`;
+  if (accion === 'mover') {
+    const nuevaFecha = campo(f, 'nueva_fecha') ?? t.fecha;
+    const nuevaHora = campo(f, 'nueva_hora');
+    resultado = await supabase.rpc('cambiar_turno_una_vez', { horario_id: horario, fecha: t.fecha, accion: 'mover', nueva_fecha: nuevaFecha, nueva_hora: nuevaHora, nota: campo(f, 'nota') });
+    if (esFechaIso(nuevaFecha) && nuevaHora) {
+      aviso = avisoMoverUnaVez(tipo, t.fecha, t.hora, nuevaFecha, nuevaHora, quien);
+      destino = `/semana?desde=${lunesDe(nuevaFecha)}`;
+    }
+  } else if (accion === 'cancelar') {
+    resultado = await supabase.rpc('cambiar_turno_una_vez', { horario_id: horario, fecha: t.fecha, accion: 'cancelar', nueva_fecha: null, nueva_hora: null, nota: null });
+    aviso = avisoCancelarUnaVez(tipo, t.fecha, t.hora, quien);
+  } else if (accion === 'periodo') {
+    const mover = f.get('que') === 'mover';
+    const desde = campo(f, 'desde');
+    const hasta = campo(f, 'hasta');
+    const dia = campoNumero(f, 'nuevo_dia_semana');
+    const hora = campo(f, 'nueva_hora');
+    resultado = await supabase.rpc('cambiar_turno_periodo', {
+      horario_id: horario, desde, hasta, accion: mover ? 'mover' : 'cancelar',
+      nuevo_dia_semana: mover ? dia : null, nueva_hora: mover ? hora : null, nota: campo(f, 'nota'),
+    });
+    if (esFechaIso(desde) && esFechaIso(hasta)) {
+      aviso = avisoPeriodo(tipo, desde, hasta, t.dia_semana, t.hora, mover && dia && hora ? { dia, hora } : null, quien);
+      destino = `/semana?desde=${lunesDe(desde)}`;
+    }
+  } else if (accion === 'anular') {
+    resultado = await supabase.rpc('anular_cambio', { id: campo(f, 'cambio_id') });
+    aviso = avisoAnular(tipo, t.dia_semana, t.hora, t.fecha, quien);
+  }
+  if (!resultado.error) {
+    if (aviso) await avisarFamilia(supabase, aviso);
+    return Astro.redirect(destino, 303);
+  }
+  error = textoDeError(resultado.error);
+}
+
+if (estado === 'no_existe') Astro.response.status = 404;
+if (estado === 'falla') Astro.response.status = 503;
+---
+<App titulo={t?.terapia.tipo ?? 'Turno'} conSesion seccion="semana">
+  {estado === 'ok' && t && <CambiarTurno t={t} error={error} />}
+  {estado === 'no_existe' && (
+    <section class="tarjeta"><h1 class="titulo">No encontramos ese turno</h1><a class="boton boton-contorno" href="/semana">Ir a la semana</a></section>
+  )}
+  {estado === 'falla' && (
+    <section class="tarjeta"><h1 class="titulo">Algo falló</h1><p class="apoyo">No pudimos cargar el turno. Probá de nuevo en un rato.</p></section>
+  )}
+</App>

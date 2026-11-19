@@ -2,10 +2,12 @@
 // Terapias, profesionales y eventos de la familia, con sus formularios.
 import App from '../../layouts/App.astro';
 import Terapias from '../../components/Terapias.astro';
+import { avisarFamilia } from '../../lib/avisar-familia';
 import { textoDeError } from '../../lib/errores';
 import { hoyEnArgentina } from '../../lib/fechas';
-import { campo, campoNumero, exigirFamilia } from '../../lib/sesion';
+import { campo, campoNumero, exigirFamilia, miNombre } from '../../lib/sesion';
 import type { MisTerapias } from '../../lib/terapias';
+import { avisoEvento, avisoHorario } from '../../lib/textos-aviso';
 
 export const prerender = false;
 
@@ -31,20 +33,35 @@ if (Astro.request.method === 'POST') {
     if (r.error) error = textoDeError(r.error);
     else {
       const id = r.data as string;
+      const dia = campoNumero(f, 'dia_semana');
+      const hora = campo(f, 'hora');
       const h = await supabase.rpc('agregar_horario', {
-        terapia_id: id, dia_semana: campoNumero(f, 'dia_semana'), hora: campo(f, 'hora'), duracion_min: campoNumero(f, 'duracion_min'), desde: campo(f, 'desde'),
+        terapia_id: id, dia_semana: dia, hora, duracion_min: campoNumero(f, 'duracion_min'), desde: campo(f, 'desde'),
       });
+      if (!h.error && dia && hora) {
+        const tipo = (await supabase.rpc('terapia', { id })).data?.tipo as string | undefined;
+        if (tipo) await avisarFamilia(supabase, avisoHorario(tipo, dia, hora, true, campo(f, 'desde') ?? hoyEnArgentina(), miNombre(familia)));
+      }
       return Astro.redirect(h.error ? `/terapias/${id}?error=${encodeURIComponent(h.error.message)}` : '/semana', 303);
     }
   } else if (accion === 'agregar_evento') {
-    const r = await supabase.rpc('agregar_evento', {
-      titulo: campo(f, 'titulo'), dia_semana: campoNumero(f, 'dia_semana'), hora: campo(f, 'hora'), hijo_id: campo(f, 'hijo_id'), desde: null,
-    });
-    if (!r.error) return Astro.redirect('/terapias', 303);
+    const titulo = campo(f, 'titulo');
+    const dia = campoNumero(f, 'dia_semana');
+    const hora = campo(f, 'hora');
+    const r = await supabase.rpc('agregar_evento', { titulo, dia_semana: dia, hora, hijo_id: campo(f, 'hijo_id'), desde: null });
+    if (!r.error) {
+      if (titulo && dia && hora) await avisarFamilia(supabase, avisoEvento(titulo, dia, hora, true, hoyEnArgentina(), miNombre(familia)));
+      return Astro.redirect('/terapias', 303);
+    }
     error = textoDeError(r.error);
   } else if (accion === 'quitar_evento') {
-    const r = await supabase.rpc('quitar_evento', { id: campo(f, 'id'), hasta: null });
-    if (!r.error) return Astro.redirect('/terapias', 303);
+    const eventoId = campo(f, 'id');
+    const previo = ((await supabase.rpc('mis_terapias')).data as MisTerapias | null)?.eventos.find((e) => e.id === eventoId);
+    const r = await supabase.rpc('quitar_evento', { id: eventoId, hasta: null });
+    if (!r.error) {
+      if (previo) await avisarFamilia(supabase, avisoEvento(previo.titulo, previo.dia_semana, previo.hora, false, hoyEnArgentina(), miNombre(familia)));
+      return Astro.redirect('/terapias', 303);
+    }
     error = textoDeError(r.error);
   }
 }

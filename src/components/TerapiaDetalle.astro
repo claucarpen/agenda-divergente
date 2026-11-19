@@ -2,11 +2,12 @@
 // `/terapias/<id>`: editar la terapia, sus horarios semanales y terminarla.
 import CamposFranja from './CamposFranja.astro';
 import { DIAS, fechaCorta, sumarDias } from '../lib/fechas';
-import type { Profesional, Terapia, TipoTerapia } from '../lib/terapias';
+import { describirCambio } from '../lib/cambios';
+import type { Cambio, Profesional, Terapia, TipoTerapia } from '../lib/terapias';
 import { MODALIDADES, dondeEs } from '../lib/terapias';
 
-interface Props { t: Terapia; profesionales: Profesional[]; tipos: TipoTerapia[]; hoy: string; error?: string | null }
-const { t, profesionales, tipos, hoy, error = null } = Astro.props;
+interface Props { t: Terapia; profesionales: Profesional[]; tipos: TipoTerapia[]; hoy: string; cambios?: Cambio[]; error?: string | null }
+const { t, profesionales, tipos, hoy, cambios = [], error = null } = Astro.props;
 const activa = t.estado === 'activa';
 const finHorario = (duracion: number, hora: string) => {
   const [h, m] = hora.split(':').map(Number);
@@ -52,6 +53,24 @@ const finHorario = (duracion: number, hora: string) => {
   )}
   {activa && <p class="apoyo chico">Quitar un horario lo saca desde hoy; las semanas pasadas no cambian.</p>}
 </section>
+
+{cambios.length > 0 && (
+  <section class="tarjeta" aria-labelledby="t-cambios">
+    <h2 class="titulo" id="t-cambios">Cambios en curso</h2>
+    <ul class="lista">
+      {cambios.map((c) => (
+        <li class="item">
+          <span class="item-texto"><strong>{describirCambio(c)}</strong>{(c.nota || c.quien) && <span class="apoyo">{[c.nota, c.quien && `Lo cambió ${c.quien}`].filter(Boolean).join(' · ')}</span>}</span>
+          <form method="post" class="item-acciones">
+            <input type="hidden" name="accion" value="anular_cambio" />
+            <input type="hidden" name="cambio_id" value={c.id} />
+            <button class="boton boton-texto" type="submit">Deshacer</button>
+          </form>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
 
 {activa && (
   <section class="tarjeta" aria-labelledby="t-editar">

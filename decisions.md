@@ -69,3 +69,21 @@
 **Qué se decide**: `.navegacion` usa `position: sticky; bottom: 0` como último elemento del body.
 **Por qué**: queda pegada abajo al hacer scroll igual que una barra fija, pero no tapa el último contenido y no obliga a reservar un margen inferior adivinado.
 **La invalidaría**: un navegador objetivo donde sticky no funcione bien al final del body.
+
+## 2026-11-18 · [ui] Cambiar un turno es una página propia (`/turno`), no un diálogo
+
+**Qué se decide**: tocar un turno en la semana abre `/turno?horario=…&fecha=…` con los tres caminos (moverlo, no hay ese día, período) o, si ya está cambiado, el cambio con "Deshacer". Sin React ni `<dialog>`.
+**Por qué**: la spec dejaba la elección a quien implementa. Una página funciona igual con formularios POST, el botón atrás del celular vuelve a la semana, y mover un turno sigue siendo tres toques más la hora ("Moverlo" abre desplegado).
+**La invalidaría**: que en la práctica ir y volver de la semana resulte lento.
+
+## 2026-11-18 · [avisos] El aviso se envía antes de redirigir, con tope de 4 s por suscripción
+
+**Qué se decide**: las páginas esperan `avisarFamilia` antes de responder el 303; `web-push` corta a los 4 s. Los errores se tragan.
+**Por qué**: en una función de Vercel, el trabajo que sigue después de responder puede cortarse; esperar asegura que el aviso salga. Con dos o tres celulares por familia la espera es corta.
+**La invalidaría**: familias con muchos celulares o avisos que demoren la navegación de forma notoria; entonces, una cola.
+
+## 2026-11-18 · [tests] El servicio de push falso es HTTPS con un certificado autofirmado de openssl
+
+**Qué se decide**: `tests/push/push.test.ts` genera un certificado para 127.0.0.1 con openssl y el cliente de `web-push` confía solo en ese certificado (`agent` con `ca`). Nunca se desactiva la verificación TLS.
+**Por qué**: `web-push` 4 solo habla HTTPS; un certificado propio del test prueba el envío real sin servicios externos ni claves reales.
+**La invalidaría**: una máquina sin openssl (macOS y Linux lo traen).

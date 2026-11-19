@@ -1,11 +1,11 @@
-// Capturas de la vista previa (rúbrica C8 de cada spec) a 375 y 1280 px, en docs/capturas/<spec>/ (`SPEC=001` o `SPEC=002`, por defecto 002).
+// Capturas de la vista previa (rúbrica C8 de cada spec) a 375 y 1280 px, en docs/capturas/<spec>/ (`SPEC=001`, `002` o `003`, por defecto 003).
 // Requiere `astro dev` corriendo en BASE (por defecto http://127.0.0.1:4323). `CHROMIUM_PATH` es opcional.
 import { chromium } from '@playwright/test';
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:4323';
-const PANTALLAS = ['sin-sesion', 'crear-familia', 'inicio', 'inicio-invitando', 'invitacion-vigente', 'invitacion-vencida', 'semana', 'semana-vacia', 'terapias', 'terapia-detalle'];
-const SPEC = process.env.SPEC ?? '002';
-const DE_LA_SPEC = { '001': PANTALLAS.slice(0, 6), '002': PANTALLAS.slice(6) }[SPEC];
+const PANTALLAS = ['sin-sesion', 'crear-familia', 'inicio', 'inicio-invitando', 'invitacion-vigente', 'invitacion-vencida', 'semana', 'semana-vacia', 'terapias', 'terapia-detalle', 'semana-con-cambios', 'cambiar-turno', 'avisos', 'avisos-iphone'];
+const SPEC = process.env.SPEC ?? '003';
+const DE_LA_SPEC = { '001': PANTALLAS.slice(0, 6), '002': PANTALLAS.slice(6, 10), '003': PANTALLAS.slice(10) }[SPEC];
 const ANCHOS = [375, 1280];
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });

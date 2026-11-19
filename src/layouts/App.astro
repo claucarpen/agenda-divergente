@@ -16,6 +16,9 @@ const { titulo, conSesion = false, seccion } = Astro.props;
     <meta name="theme-color" content="#006a60" />
     <title>{titulo} · Agenda Divergente</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/iconos/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Agenda" />
   </head>
   <body class:list={{ 'con-navegacion': !!seccion }}>
     <header class="barra">

@@ -24,6 +24,11 @@ const PARES = [
   ['on-error', 'error', 'botón "Terminar terapia" (spec 002)'],
   ['on-surface-variant', 'surface-container', 'destino inactivo de la navegación (spec 002)'],
   ['primary', 'surface-container-low', 'nombre del día de hoy (spec 002)'],
+  ['on-surface-variant', 'surface-container-high', 'turno cancelado (spec 003)'],
+  ['on-secondary-container', 'secondary-container', 'turno cambiado (spec 003)'],
+  ['on-primary', 'primary', 'etiqueta "Cambiado" (spec 003)'],
+  ['on-error-container', 'error-container', 'etiqueta "No hay" (spec 003)'],
+  ['on-primary-container', 'primary-container', 'mensaje de aviso de prueba enviado (spec 003)'],
 ];
 let falla = false;
 for (const [nombre, t] of [['claro', leer(claro)], ['oscuro', leer(oscuro)]]) {

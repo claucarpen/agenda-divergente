@@ -1,5 +1,5 @@
 ---
-status: aprobada
+status: implementada
 depends_on: [002]
 ---
 
@@ -188,3 +188,59 @@ README. Una vez en producción, cada cambio manda avisos reales a los celulares 
 | Funcionar sin conexión | Los adultos lo extrañan |
 | Capturar el cambio desde el WhatsApp de la terapeuta | Cargar a mano resulta lento (oportunidad del PRD) |
 | Mover un turno arrastrándolo | Los formularios resultan lentos en la práctica |
+
+## Evidencia de implementación (2026-11-18)
+
+Rama `spec/003-cambios`. Decisiones nuevas: `decisions.md`, entradas `[ui]` (`/turno` como página),
+`[avisos]` (envío antes de redirigir) y `[tests]` (servicio de push falso HTTPS) del 2026-11-18.
+
+### Paso 0
+
+Pasó antes de construir nada: `tests/push/push.test.ts` manda con `web-push` 4 y claves generadas en
+el test a un servicio falso HTTPS local; llega un POST con `Content-Encoding: aes128gcm`, el header
+`Authorization: vapid t=…, k=…` y el cuerpo cifrado. Un 410 llega como error con `statusCode`.
+
+### `evals/run.sh`
+
+```
+PASS 001·C0 Postgres embebido + shim de Supabase
+PASS 001·C1 el proyecto compila
+PASS 001·C2 migración: 7 tablas con RLS, 8 funciones security definer, sin datos prohibidos
+PASS 001·C3 + 002·C3 + 003·C3 reglas y seguridad en la base
+     |       Tests  64 passed (64)
+PASS 001·C4 + 002·C4 + 003·C4 WhatsApp, fechas y avisos (Vitest)
+     |       Tests  16 passed (16)
+PASS 001·C5 + 002·C5 + 003·C5 sin sesión, instalable y sin scroll horizontal (Playwright)
+     |   12 passed (6.1s)
+PASS 001·C6 la vista previa no llega a producción
+PASS 001·C7 sin secretos
+PASS 001·C8 (parte automática) contraste AA de todos los pares, claro y oscuro
+PASS 001·C9 README con las secciones del operador
+PASS 002·C2 migración: 5 tablas con RLS, 12 funciones security definer, sin datos prohibidos ni drops
+PASS 002·C9 README con la sección Migración 002
+PASS 003·C0 Web Push cifrado con VAPID hacia un servicio de push falso
+PASS 003·C2 migración: 2 tablas con RLS, 9 funciones security definer, destinatarios sin email
+PASS 003·C7 sin claves VAPID privadas en el repo ni en el navegador
+PASS 003·C9 README con Avisos y Migración 003
+
+16 pasan, 0 fallan
+```
+
+C2 y C7 se probaron en negativo: con `email` en `destinatarios_aviso` falla C2; con un archivo con
+`VAPID_PRIVATE_KEY=<valor>` falla C7. Se sumó un test que recorre las 14 pantallas de la vista
+previa con los desplegables abiertos a 375 px: encontró un desborde de los formularios en dos
+columnas, corregido con `minmax(0, 1fr)`.
+
+### C8 — rúbrica
+
+Capturas en `docs/capturas/003/` (4 pantallas a 375 y 1280 px, y a 375 px en modo oscuro); las de
+la 001 y la 002 se rehicieron.
+
+1. Mover: tocar el turno → "Moverlo" ya abierto con día y hora del turno → elegir hora →
+   "Guardar". Tres toques más la hora. ✓
+2. Cancelado: gris, tachado y "No hay"; cambiado: otro color, borde y "Cambiado · antes jue
+   26/11 16:00". ✓
+3. Avisos: un punto por adulto (activo / sin avisos) y una tarjeta "En este celular" con un solo
+   paso visible. ✓
+4. iPhone: cuatro pasos numerados con "Safari", "Compartir", "Agregar a inicio" y "Agregar". ✓
+5. Mismos tokens; contraste AA de los 5 pares nuevos; botones de 48 px. ✓
