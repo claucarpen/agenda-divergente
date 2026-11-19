@@ -1,0 +1,16 @@
+---
+// `/` sin sesión.
+import BotonGoogle from './BotonGoogle.astro';
+
+interface Props { motivo?: string | null }
+const { motivo = null } = Astro.props;
+---
+<section class="hero">
+  <h1 class="titular">La semana de terapias, en orden y compartida</h1>
+  <p class="apoyo">Un solo lugar para los turnos de tu hijo o hija, los cambios que llegan a último momento y los papeles de la obra social. Lo ven y lo cambian los dos adultos de la familia.</p>
+</section>
+{motivo && <p class="aviso" role="alert">{motivo}</p>}
+<section class="tarjeta">
+  <BotonGoogle next="/" />
+  <p class="apoyo chico">Usamos tu cuenta de Google solo para que entres. No guardamos diagnósticos, informes ni documentos.</p>
+</section>

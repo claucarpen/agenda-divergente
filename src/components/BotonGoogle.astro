@@ -1,0 +1,9 @@
+---
+// "Entrar con Google": arranca el OAuth en el servidor y vuelve a `next`.
+interface Props { next: string; texto?: string }
+const { next, texto = 'Entrar con Google' } = Astro.props;
+---
+<form method="post" action="/auth/login">
+  <input type="hidden" name="next" value={next} />
+  <button class="boton boton-relleno boton-ancho" type="submit">{texto}</button>
+</form>
