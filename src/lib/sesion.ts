@@ -26,3 +26,6 @@ export const campoNumero = (form: FormData, k: string): number | null => {
   const v = campo(form, k);
   return v === null || !/^-?\d+$/.test(v) ? null : Number(v);
 };
+
+// El nombre de quien está usando la app, para firmar los avisos.
+export const miNombre = (familia: Familia) => familia.adultos.find((a) => a.soy_yo)?.nombre ?? 'un adulto';

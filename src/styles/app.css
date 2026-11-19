@@ -124,9 +124,10 @@ a { color: var(--md-primary); }
   color: var(--md-on-surface);
   font: inherit;
   width: 100%;
+  min-width: 0;
 }
 .campo input:focus, .campo select:focus { outline: 2px solid var(--md-primary); outline-offset: -1px; border-color: var(--md-primary); }
-.fila-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.fila-campos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
 form { display: grid; gap: 16px; margin: 0; }
 
 /* Listas y chips */
@@ -256,6 +257,25 @@ body.con-navegacion .contenido { padding-bottom: 24px; }
 .item-acciones { margin-left: auto; display: flex; gap: 4px; flex: none; }
 .casilla { display: flex; align-items: center; gap: 12px; min-height: 48px; }
 .casilla input { width: 22px; height: 22px; accent-color: var(--md-primary); }
-.fila-campos-3 { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 12px; }
-@media (max-width: 380px) { .fila-campos-3 { grid-template-columns: 1fr 1fr; } }
+.fila-campos-3 { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+@media (max-width: 380px) { .fila-campos-3 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 .boton-peligro { background: var(--md-error); color: var(--md-on-error); }
+
+/* Cambios de turno (spec 003) */
+.ocurrencia-cambiada { background: var(--md-secondary-container); color: var(--md-on-secondary-container); border-left: 6px solid var(--md-primary); }
+.ocurrencia-cancelada { background: var(--md-surface-container-high); color: var(--md-on-surface-variant); }
+.ocurrencia-cancelada strong { text-decoration: line-through; }
+.ocurrencia-texto .etiqueta { justify-self: start; margin: 2px 0; }
+.etiqueta-cambiado { background: var(--md-primary); color: var(--md-on-primary); }
+.etiqueta-cancelado { background: var(--md-error-container); color: var(--md-on-error-container); }
+.ocurrencia-nota { font-style: italic; }
+.opciones-turno { display: grid; gap: 12px; }
+.opciones-turno details { background: var(--md-surface); border-radius: 16px; padding: 4px; }
+.opciones-turno details[open] { padding: 4px 12px 16px; }
+.ayuda { font-size: 0.8125rem; color: var(--md-on-surface-variant); margin: 0; }
+.pasos { margin: 0; padding-left: 1.25rem; display: grid; gap: 8px; }
+.estado-avisos { display: flex; align-items: center; gap: 8px; }
+.punto { width: 10px; height: 10px; border-radius: 50%; background: var(--md-outline); flex: none; }
+.punto.activo { background: var(--md-primary); }
+[hidden] { display: none !important; }
+.aviso-ok { background: var(--md-primary-container); color: var(--md-on-primary-container); }

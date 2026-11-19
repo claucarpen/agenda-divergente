@@ -14,6 +14,19 @@ export type MisTerapias = { terapias: Terapia[]; profesionales: Profesional[]; e
 export type OcurrenciaTerapia = {
   clase: 'terapia'; terapia_id: string; horario_id: string; inicio: string; fin: string;
   tipo: string; profesional: string; modalidad: Modalidad; lugar: string | null; hijo: string;
+  // Spec 003: `fecha_turno` es el día del turno original (al que se aplica un cambio).
+  estado?: 'normal' | 'cambiado' | 'cancelado'; fecha_turno?: string; original_fecha?: string | null;
+  original_inicio?: string | null; cambio_id?: string | null; nota?: string | null;
+};
+export type Cambio = {
+  id: string; alcance: 'una_vez' | 'periodo'; accion: 'mover' | 'cancelar';
+  fecha: string | null; desde: string | null; hasta: string | null;
+  nueva_fecha: string | null; nuevo_dia_semana: number | null; nueva_hora: string | null; nota: string | null;
+  quien: string | null; horario_id: string; dia_semana: number; hora: string; duracion_min: number; terapia_id: string; tipo: string;
+};
+export type Turno = {
+  horario_id: string; fecha: string; hay_turno: boolean; dia_semana: number; hora: string; duracion_min: number;
+  terapia: Terapia; cambio: Cambio | null;
 };
 export type OcurrenciaEvento = { clase: 'evento'; evento_id: string; inicio: string; titulo: string; hijo: string | null };
 export type Dia = { fecha: string; ocurrencias: (OcurrenciaTerapia | OcurrenciaEvento)[] };

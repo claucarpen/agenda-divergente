@@ -53,3 +53,13 @@ export const rangoHorario = (inicio: string, fin: string) => `${inicio} – ${fi
 
 // "23/11/2026".
 export const fechaCorta = (iso: string) => `${ddmm(iso)}/${iso.slice(0, 4)}`;
+
+// Suma minutos a "HH:MM" (vuelve a 00:00 pasada la medianoche).
+export function sumarMinutos(hora: string, minutos: number): string {
+  const [h, m] = hora.split(':').map(Number);
+  const total = (h * 60 + m + minutos) % (24 * 60);
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+// "jue 26/11".
+export const diaCorto = (iso: string) => `${DIAS_CORTOS[diaSemana(iso) - 1].toLowerCase()} ${ddmm(iso)}`;

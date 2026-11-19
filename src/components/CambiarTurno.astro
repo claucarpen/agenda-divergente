@@ -1,0 +1,114 @@
+---
+// `/turno`: un turno puntual. Si ya tiene un cambio, se muestra con "Deshacer"; si no, los tres caminos:
+// moverlo, "no hay ese día" o cambiar durante un período.
+import { DIAS, diaCorto, nombreDia, sumarDias, sumarMinutos } from '../lib/fechas';
+import { describirCambio } from '../lib/cambios';
+import type { Turno } from '../lib/terapias';
+import { dondeEs } from '../lib/terapias';
+
+interface Props { t: Turno; error?: string | null }
+const { t, error = null } = Astro.props;
+const fin = sumarMinutos(t.hora, t.duracion_min);
+const volver = `/semana?desde=${sumarDias(t.fecha, 1 - t.dia_semana)}`;
+---
+<section>
+  <a class="boton boton-texto" href={volver}>← Semana</a>
+  <h1 class="titular">{t.terapia.tipo}</h1>
+  <p class="apoyo">{nombreDia(t.fecha)} · {t.hora} – {fin}</p>
+  <p class="apoyo chico">{t.terapia.profesional} · {dondeEs(t.terapia.modalidad, t.terapia.lugar)}</p>
+</section>
+
+{error && <p class="aviso" role="alert">{error}</p>}
+
+{t.cambio ? (
+  <section class="tarjeta tarjeta-tonal">
+    <h2 class="titulo">Este turno está cambiado</h2>
+    <p>{describirCambio(t.cambio)}</p>
+    {t.cambio.nota && <p class="apoyo"><em>{t.cambio.nota}</em></p>}
+    {t.cambio.quien && <p class="apoyo chico">Lo cambió {t.cambio.quien}.</p>}
+    <form method="post">
+      <input type="hidden" name="accion" value="anular" />
+      <input type="hidden" name="cambio_id" value={t.cambio.id} />
+      <button class="boton boton-relleno boton-ancho" type="submit">Deshacer el cambio</button>
+    </form>
+  </section>
+) : !t.hay_turno ? (
+  <section class="tarjeta"><p class="apoyo">Ese día no hay turno de esta terapia.</p></section>
+) : (
+  <section class="tarjeta" aria-labelledby="t-cambiar">
+    <h2 class="titulo" id="t-cambiar">Cambiar este turno</h2>
+    <div class="opciones-turno">
+      <details class="desplegable" open>
+        <summary class="boton boton-tonal boton-ancho">Moverlo</summary>
+        <form method="post">
+          <input type="hidden" name="accion" value="mover" />
+          <div class="fila-campos">
+            <div class="campo">
+              <label for="m-fecha">Nuevo día</label>
+              <input id="m-fecha" name="nueva_fecha" type="date" value={t.fecha} required />
+            </div>
+            <div class="campo">
+              <label for="m-hora">Nueva hora</label>
+              <input id="m-hora" name="nueva_hora" type="time" value={t.hora} required />
+            </div>
+          </div>
+          <div class="campo">
+            <label for="m-nota">Nota (opcional)</label>
+            <input id="m-nota" name="nota" maxlength="80" autocomplete="off" />
+            <p class="ayuda">Hasta 80 caracteres. No pongas datos de salud.</p>
+          </div>
+          <button class="boton boton-relleno boton-ancho" type="submit">Guardar</button>
+        </form>
+      </details>
+
+      <form method="post">
+        <input type="hidden" name="accion" value="cancelar" />
+        <button class="boton boton-contorno boton-ancho" type="submit">No hay ese día ({diaCorto(t.fecha)})</button>
+      </form>
+
+      <details class="desplegable">
+        <summary class="boton boton-contorno boton-ancho">Cambiar durante un período</summary>
+        <form method="post">
+          <input type="hidden" name="accion" value="periodo" />
+          <div class="fila-campos">
+            <div class="campo">
+              <label for="p-desde">Desde</label>
+              <input id="p-desde" name="desde" type="date" value={t.fecha} required />
+            </div>
+            <div class="campo">
+              <label for="p-hasta">Hasta</label>
+              <input id="p-hasta" name="hasta" type="date" value={sumarDias(t.fecha, 27)} required />
+            </div>
+          </div>
+          <div class="campo">
+            <label for="p-que">Qué pasa</label>
+            <select id="p-que" name="que" required>
+              <option value="mover">Va otro día u horario</option>
+              <option value="cancelar">No hay</option>
+            </select>
+          </div>
+          <div class="fila-campos">
+            <div class="campo">
+              <label for="p-dia">Día</label>
+              <select id="p-dia" name="nuevo_dia_semana">
+                {DIAS.map((d, i) => <option value={i + 1} selected={i + 1 === t.dia_semana}>{d}</option>)}
+              </select>
+            </div>
+            <div class="campo">
+              <label for="p-hora">Hora</label>
+              <input id="p-hora" name="nueva_hora" type="time" value={t.hora} />
+            </div>
+          </div>
+          <div class="campo">
+            <label for="p-nota">Nota (opcional)</label>
+            <input id="p-nota" name="nota" maxlength="80" autocomplete="off" />
+            <p class="ayuda">Hasta 80 caracteres. No pongas datos de salud. Si eligís "No hay", el día y la hora no se usan.</p>
+          </div>
+          <button class="boton boton-relleno boton-ancho" type="submit">Guardar período</button>
+        </form>
+      </details>
+    </div>
+  </section>
+)}
+
+<a class="boton boton-texto" href={`/terapias/${t.terapia.id}`}>Ver la terapia y sus horarios</a>

@@ -1,0 +1,136 @@
+---
+// Sección "Avisos" de `/familia` (spec 003): quién los tiene activos y qué hacer en este celular.
+// El estado del celular lo decide el script: soporte, iPhone sin instalar, permiso y suscripción.
+type Estado = { nombre: string; soy_yo: boolean; activos: boolean };
+// `pasoForzado`: solo para la vista previa de diseño, muestra un paso sin revisar el celular.
+interface Props { estado: Estado[]; vapidPublica: string | null; mensaje?: string | null; pasoForzado?: string }
+const { estado, vapidPublica, mensaje = null, pasoForzado } = Astro.props;
+---
+<section class="tarjeta" aria-labelledby="t-avisos" id="avisos" data-vapid={vapidPublica ?? ''} data-forzar={pasoForzado}>
+  <h2 class="titulo" id="t-avisos">Avisos</h2>
+  <p class="apoyo chico">Cuando alguien cambia un turno, un horario o un evento, a todos los adultos de la familia les llega un aviso al celular.</p>
+  {mensaje && <p class="aviso aviso-ok" role="status">{mensaje}</p>}
+  <ul class="lista">
+    {estado.map((a) => (
+      <li class="item estado-avisos">
+        <span class:list={['punto', { activo: a.activos }]} aria-hidden="true"></span>
+        <span class="item-texto"><strong>{a.nombre}{a.soy_yo ? ' (vos)' : ''}</strong><span class="apoyo">{a.activos ? 'Avisos activos' : 'Sin avisos'}</span></span>
+      </li>
+    ))}
+  </ul>
+
+  <div class="tarjeta tarjeta-tonal" data-avisos-celular>
+    <h3 class="subtitulo">En este celular</h3>
+
+    <div data-paso="cargando"><p class="apoyo">Revisando este celular…</p></div>
+
+    <div data-paso="sin-claves" hidden><p class="apoyo">Los avisos todavía no están configurados en el servidor.</p></div>
+
+    <div data-paso="sin-soporte" hidden><p class="apoyo">Este navegador no puede recibir avisos. Probá con Chrome en Android o con Safari en iPhone (instalando la app).</p></div>
+
+    <div data-paso="iphone" hidden>
+      <p class="apoyo">En iPhone, los avisos funcionan solo con la app instalada:</p>
+      <ol class="pasos">
+        <li>Abrí esta página en <strong>Safari</strong>.</li>
+        <li>Tocá <strong>Compartir</strong> (el cuadrado con la flecha hacia arriba).</li>
+        <li>Elegí <strong>Agregar a inicio</strong> y tocá <strong>Agregar</strong>.</li>
+        <li>Abrí <strong>Agenda</strong> desde la pantalla de inicio y volvé a esta sección.</li>
+      </ol>
+    </div>
+
+    <div data-paso="bloqueado" hidden>
+      <p class="apoyo">Los avisos están bloqueados para este sitio. Habilitalos en los ajustes del navegador (Notificaciones → Agenda Divergente → Permitir) y volvé a esta página.</p>
+    </div>
+
+    <div data-paso="inactivo" hidden>
+      <p class="apoyo">Este celular todavía no recibe avisos.</p>
+      <button class="boton boton-relleno boton-ancho" type="button" data-accion="activar">Activar avisos</button>
+    </div>
+
+    <div data-paso="activo" hidden>
+      <p class="apoyo">Este celular recibe avisos.</p>
+      <div class="acciones">
+        <form method="post">
+          <input type="hidden" name="accion" value="probar_aviso" />
+          <input type="hidden" name="endpoint" value="" data-endpoint />
+          <button class="boton boton-relleno" type="submit">Probar aviso</button>
+        </form>
+        <button class="boton boton-contorno" type="button" data-accion="desactivar">Desactivar en este celular</button>
+      </div>
+    </div>
+
+    <p class="aviso" role="alert" data-error hidden></p>
+  </div>
+</section>
+
+<script>
+  const raiz = document.querySelector<HTMLElement>('#avisos');
+  const vapid = raiz?.dataset.vapid ?? '';
+  const mostrar = (paso: string) => {
+    for (const el of raiz?.querySelectorAll<HTMLElement>('[data-paso]') ?? []) el.hidden = el.dataset.paso !== paso;
+  };
+  const error = (texto: string) => {
+    const el = raiz?.querySelector<HTMLElement>('[data-error]');
+    if (el) { el.textContent = texto; el.hidden = false; }
+  };
+  const enviar = async (datos: Record<string, string>) => {
+    const f = new FormData();
+    for (const [k, v] of Object.entries(datos)) f.set(k, v);
+    const r = await fetch('/familia', { method: 'POST', body: f, headers: { 'x-avisos': '1' } });
+    if (!r.ok) throw new Error(String(r.status));
+  };
+  const aBytes = (b64: string) => {
+    const s = atob((b64 + '='.repeat((4 - (b64.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/'));
+    return Uint8Array.from(s, (c) => c.charCodeAt(0));
+  };
+  const b64url = (buf: ArrayBuffer | null) => buf ? btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : '';
+  const esIphone = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const instalada = window.matchMedia('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+
+  async function revisar() {
+    if (!vapid) return mostrar('sin-claves');
+    if (esIphone && !instalada) return mostrar('iphone');
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return mostrar('sin-soporte');
+    if (Notification.permission === 'denied') return mostrar('bloqueado');
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    const sub = await reg.pushManager.getSubscription();
+    if (sub && Notification.permission === 'granted') {
+      const campo = raiz?.querySelector<HTMLInputElement>('[data-endpoint]');
+      if (campo) campo.value = sub.endpoint;
+      return mostrar('activo');
+    }
+    mostrar('inactivo');
+  }
+
+  raiz?.querySelector('[data-accion="activar"]')?.addEventListener('click', async () => {
+    try {
+      // El permiso se pide con el toque, nunca al abrir la página (requisito de iPhone).
+      const permiso = await Notification.requestPermission();
+      if (permiso !== 'granted') return mostrar(permiso === 'denied' ? 'bloqueado' : 'inactivo');
+      const reg = await navigator.serviceWorker.register('/sw.js');
+      await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: aBytes(vapid) });
+      await enviar({ accion: 'guardar_suscripcion', endpoint: sub.endpoint, p256dh: b64url(sub.getKey('p256dh')), auth: b64url(sub.getKey('auth')) });
+      location.reload();
+    } catch {
+      error('No pudimos activar los avisos. Probá de nuevo.');
+    }
+  });
+
+  raiz?.querySelector('[data-accion="desactivar"]')?.addEventListener('click', async () => {
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = await reg?.pushManager.getSubscription();
+      if (sub) {
+        await enviar({ accion: 'borrar_suscripcion', endpoint: sub.endpoint });
+        await sub.unsubscribe();
+      }
+      location.reload();
+    } catch {
+      error('No pudimos desactivar los avisos. Probá de nuevo.');
+    }
+  });
+
+  if (raiz?.dataset.forzar) mostrar(raiz.dataset.forzar);
+  else revisar().catch(() => mostrar('sin-soporte'));
+</script>

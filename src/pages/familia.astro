@@ -1,19 +1,23 @@
 ---
 // La familia: adultos, invitar a otro adulto e hijos (lo que en la spec 001 era `/` con familia).
 import App from '../layouts/App.astro';
+import Avisos from '../components/Avisos.astro';
 import Inicio from '../components/Inicio.astro';
+import { avisarFamilia } from '../lib/avisar-familia';
 import { textoDeError } from '../lib/errores';
-import { exigirFamilia } from '../lib/sesion';
+import { campo, exigirFamilia } from '../lib/sesion';
+import { avisoPrueba } from '../lib/textos-aviso';
 
 export const prerender = false;
 
 const ctx = await exigirFamilia(Astro);
 if (!ctx.ok) return ctx.respuesta;
 const { supabase } = ctx;
-let { familia } = ctx;
+const { familia } = ctx;
 
 let invitacionUrl: string | null = null;
 let error: string | null = null;
+let mensaje: string | null = null;
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
@@ -27,9 +31,25 @@ if (Astro.request.method === 'POST') {
     const r = await supabase.rpc('crear_invitacion');
     if (!r.error) invitacionUrl = new URL(`/invitacion/${r.data as string}`, Astro.url.origin).href;
     else error = textoDeError(r.error);
+  } else if (accion === 'guardar_suscripcion' || accion === 'borrar_suscripcion') {
+    // Llamadas del script de Avisos (fetch): responden solo con el estado.
+    const r = accion === 'guardar_suscripcion'
+      ? await supabase.rpc('guardar_suscripcion', { endpoint: campo(form, 'endpoint'), p256dh: campo(form, 'p256dh'), auth: campo(form, 'auth') })
+      : await supabase.rpc('borrar_suscripcion', { endpoint: campo(form, 'endpoint') });
+    return new Response(null, { status: r.error ? 400 : 204 });
+  } else if (accion === 'probar_aviso') {
+    const endpoint = campo(form, 'endpoint');
+    const enviados = endpoint ? await avisarFamilia(supabase, avisoPrueba(), endpoint) : 0;
+    if (enviados > 0) mensaje = 'Listo: te mandamos un aviso de prueba a este celular.';
+    else error = 'No pudimos mandar el aviso de prueba. Desactivá y volvé a activar los avisos.';
   }
 }
+
+const e = await supabase.rpc('estado_avisos');
+const estadoAvisos = (e.data ?? []) as { nombre: string; soy_yo: boolean; activos: boolean }[];
+const vapidPublica = import.meta.env.PUBLIC_VAPID_PUBLIC_KEY || null;
 ---
 <App titulo={familia.nombre} conSesion seccion="familia">
   <Inicio familia={familia} invitacionUrl={invitacionUrl} error={error} />
+  <Avisos estado={estadoAvisos} vapidPublica={vapidPublica} mensaje={mensaje} />
 </App>

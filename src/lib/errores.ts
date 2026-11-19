@@ -25,6 +25,13 @@ const TEXTOS: Record<string, string> = {
   fecha_invalida: 'Revisá la fecha: no puede ser anterior al inicio de la terapia.',
   titulo_invalido: 'El título no puede quedar vacío ni pasar de 60 caracteres.',
   no_es_lunes: 'La semana empieza un lunes.',
+  sin_turno: 'Ese día no hay turno de esta terapia.',
+  accion_invalida: 'Elegí qué pasa con el turno.',
+  nota_invalida: 'La nota puede tener hasta 80 caracteres.',
+  periodo_invalido: 'Revisá las fechas: "desde" tiene que ser antes que "hasta".',
+  periodo_largo: 'El período puede durar hasta 180 días.',
+  cambio_superpuesto: 'Ese turno ya tiene un cambio en esas fechas. Deshacelo primero.',
+  suscripcion_invalida: 'No pudimos activar los avisos en este celular.',
 };
 
 export const ERROR_GENERICO = 'Algo falló. Probá de nuevo en un rato.';

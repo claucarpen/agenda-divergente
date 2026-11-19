@@ -2,16 +2,18 @@
 // Una terapia: sus horarios, sus datos y terminarla. Id inexistente o de otra familia → 404.
 import App from '../../layouts/App.astro';
 import TerapiaDetalle from '../../components/TerapiaDetalle.astro';
+import { avisarFamilia } from '../../lib/avisar-familia';
 import { claveDeError, textoDeError } from '../../lib/errores';
 import { hoyEnArgentina } from '../../lib/fechas';
-import { campo, campoNumero, exigirFamilia } from '../../lib/sesion';
-import type { MisTerapias, Terapia } from '../../lib/terapias';
+import { campo, campoNumero, exigirFamilia, miNombre } from '../../lib/sesion';
+import type { Cambio, MisTerapias, Terapia } from '../../lib/terapias';
+import { avisoAnular, avisoHorario, avisoTerminar, type Aviso } from '../../lib/textos-aviso';
 
 export const prerender = false;
 
 const ctx = await exigirFamilia(Astro);
 if (!ctx.ok) return ctx.respuesta;
-const { supabase } = ctx;
+const { supabase, familia } = ctx;
 const { id } = Astro.params;
 const ruta = `/terapias/${id}`;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -22,34 +24,61 @@ let error: string | null = errorPrevio ? textoDeError({ message: errorPrevio }) 
 if (UUID_RE.test(id ?? '') && Astro.request.method === 'POST') {
   const f = await Astro.request.formData();
   const accion = f.get('accion');
+  const quien = miNombre(familia);
+  const hoy = hoyEnArgentina();
+  // La terapia antes del cambio: de ahí salen el tipo, el horario quitado y el cambio deshecho para el aviso.
+  const antes = await supabase.rpc('terapia', { id });
+  const previa = antes.error ? null : (antes.data as Terapia);
   let r: { error: { message: string } | null } | null = null;
+  let aviso: Aviso | null = null;
   if (accion === 'agregar_horario') {
-    r = await supabase.rpc('agregar_horario', { terapia_id: id, dia_semana: campoNumero(f, 'dia_semana'), hora: campo(f, 'hora'), duracion_min: campoNumero(f, 'duracion_min'), desde: null });
+    const dia = campoNumero(f, 'dia_semana');
+    const hora = campo(f, 'hora');
+    r = await supabase.rpc('agregar_horario', { terapia_id: id, dia_semana: dia, hora, duracion_min: campoNumero(f, 'duracion_min'), desde: null });
+    if (previa && dia && hora) aviso = avisoHorario(previa.tipo, dia, hora, true, hoy, quien);
   } else if (accion === 'quitar_horario') {
-    r = await supabase.rpc('quitar_horario', { id: campo(f, 'horario_id'), hasta: null });
+    const horarioId = campo(f, 'horario_id');
+    r = await supabase.rpc('quitar_horario', { id: horarioId, hasta: null });
+    const h = previa?.horarios.find((x) => x.id === horarioId);
+    if (previa && h) aviso = avisoHorario(previa.tipo, h.dia_semana, h.hora, false, hoy, quien);
   } else if (accion === 'editar_terapia') {
     r = await supabase.rpc('editar_terapia', { id, profesional_id: campo(f, 'profesional_id'), tipo_id: campo(f, 'tipo_id'), modalidad: campo(f, 'modalidad'), lugar: campo(f, 'lugar') });
   } else if (accion === 'terminar_terapia') {
-    r = await supabase.rpc('terminar_terapia', { id, hasta: campo(f, 'hasta') });
+    const hasta = campo(f, 'hasta');
+    r = await supabase.rpc('terminar_terapia', { id, hasta });
+    if (previa && hasta) aviso = avisoTerminar(previa.tipo, hasta, quien);
+  } else if (accion === 'anular_cambio') {
+    const cambioId = campo(f, 'cambio_id');
+    const vigentes = await supabase.rpc('cambios_vigentes');
+    const c = ((vigentes.data ?? []) as Cambio[]).find((x) => x.id === cambioId);
+    r = await supabase.rpc('anular_cambio', { id: cambioId });
+    if (c) aviso = avisoAnular(c.tipo, c.dia_semana, c.hora, c.fecha ?? c.desde ?? hoy, quien);
   }
-  if (r && !r.error) return Astro.redirect(ruta, 303);
+  if (r && !r.error) {
+    if (aviso) await avisarFamilia(supabase, aviso);
+    return Astro.redirect(ruta, 303);
+  }
   if (r?.error) error = textoDeError(r.error);
 }
 
 let estado: 'ok' | 'no_existe' | 'falla' = 'no_existe';
 let t: Terapia | null = null;
 let datos: MisTerapias | null = null;
+let cambios: Cambio[] = [];
 if (UUID_RE.test(id ?? '')) {
-  const [rt, rm] = await Promise.all([supabase.rpc('terapia', { id }), supabase.rpc('mis_terapias')]);
+  const [rt, rm, rc] = await Promise.all([supabase.rpc('terapia', { id }), supabase.rpc('mis_terapias'), supabase.rpc('cambios_vigentes')]);
   if (claveDeError(rt.error) === 'ajeno') estado = 'no_existe';
   else if (rt.error || rm.error) estado = 'falla';
-  else { estado = 'ok'; t = rt.data as Terapia; datos = rm.data as MisTerapias; }
+  else {
+    estado = 'ok'; t = rt.data as Terapia; datos = rm.data as MisTerapias;
+    cambios = ((rc.data ?? []) as Cambio[]).filter((c) => c.terapia_id === id);
+  }
 }
 if (estado === 'no_existe') Astro.response.status = 404;
 if (estado === 'falla') Astro.response.status = 503;
 ---
 <App titulo={t?.tipo ?? 'Terapia'} conSesion seccion="terapias">
-  {estado === 'ok' && t && datos && <TerapiaDetalle t={t} profesionales={datos.profesionales} tipos={datos.tipos} hoy={hoyEnArgentina()} error={error} />}
+  {estado === 'ok' && t && datos && <TerapiaDetalle t={t} profesionales={datos.profesionales} tipos={datos.tipos} hoy={hoyEnArgentina()} cambios={cambios} error={error} />}
   {estado === 'no_existe' && (
     <section class="tarjeta"><h1 class="titulo">No encontramos esa terapia</h1><a class="boton boton-contorno" href="/terapias">Ir a Terapias</a></section>
   )}

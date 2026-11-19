@@ -50,3 +50,23 @@ En Supabase → SQL Editor, pegar y correr completo `supabase/migrations/001_fam
 ## Migración 002
 
 Después de la 001, en Supabase → SQL Editor, pegar y correr completo `supabase/migrations/002_terapias.sql`. Crea los tipos de terapia, profesionales, terapias, horarios y eventos de la familia, con Row Level Security, y la función que arma la semana. Se corre una sola vez.
+
+## Avisos (claves VAPID)
+
+Los avisos al celular usan Web Push con un par de claves propias. Una sola vez:
+
+1. En tu compu, dentro del repo: `npx web-push generate-vapid-keys`. Muestra una *Public Key* y una *Private Key*.
+2. En Vercel → el proyecto → Settings → Environment Variables, cargar:
+   - `PUBLIC_VAPID_PUBLIC_KEY` = la *Public Key*.
+   - `VAPID_PRIVATE_KEY` = la *Private Key*. **Es secreta**: nunca va en `.env.example`, en el código ni en un mensaje.
+   - `VAPID_SUBJECT` = `mailto:` y tu mail (por ejemplo `mailto:tu-mail@gmail.com`).
+3. Volver a desplegar (las variables `PUBLIC_*` se leen al construir).
+4. En cada celular: abrir la app → Familia → Avisos → **Activar avisos** → **Probar aviso**.
+   - **Android**: desde Chrome alcanza. Revisar que Chrome tenga permitidas las notificaciones y sin restricciones de batería.
+   - **iPhone**: primero instalar la app (Safari → Compartir → Agregar a inicio) y activar los avisos abriéndola desde la pantalla de inicio.
+
+Si cambiás las claves, todos los celulares tienen que volver a activar los avisos.
+
+## Migración 003
+
+Después de la 002, en Supabase → SQL Editor, pegar y correr completo `supabase/migrations/003_cambios.sql`. Crea los cambios de turno y las suscripciones de avisos, y actualiza la función de la semana para que muestre los cambios. Se corre una sola vez.
