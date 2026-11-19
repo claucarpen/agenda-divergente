@@ -1,0 +1,28 @@
+---
+// Solo en `astro dev` (astro.config.mjs): las pantallas con datos de ejemplo, para capturas.
+import App from '../layouts/App.astro';
+import CrearFamilia from '../components/CrearFamilia.astro';
+import Ingreso from '../components/Ingreso.astro';
+import Inicio from '../components/Inicio.astro';
+import Invitacion from '../components/Invitacion.astro';
+import type { Familia } from '../lib/familia';
+
+export const prerender = false;
+
+const familia: Familia = {
+  id: 'ejemplo',
+  nombre: 'Los García',
+  adultos: [{ nombre: 'Claudio', soy_yo: true }, { nombre: 'Laura', soy_yo: false }],
+  hijos: [{ id: 'h1', nombre: 'Mora', plan: '310', obra_social_id: 'osde', obra_social: 'OSDE' }],
+};
+const pantalla = Astro.params.pantalla;
+const url = 'https://agenda-divergente.vercel.app/invitacion/AbCdEfGhIjKlMnOpQrStUv';
+---
+<App titulo="Vista previa" conSesion={pantalla !== 'sin-sesion' && !pantalla?.startsWith('invitacion')}>
+  {pantalla === 'sin-sesion' && <Ingreso />}
+  {pantalla === 'crear-familia' && <CrearFamilia nombreAdulto="Claudio" />}
+  {pantalla === 'inicio' && <Inicio familia={familia} />}
+  {pantalla === 'inicio-invitando' && <Inicio familia={{ ...familia, adultos: [familia.adultos[0]], hijos: [] }} invitacionUrl={url} />}
+  {pantalla === 'invitacion-vigente' && <Invitacion inv={{ familia: 'Los García', invita: 'Claudio', vigente: true }} next="/invitacion/x" conSesion={false} />}
+  {pantalla === 'invitacion-vencida' && <Invitacion inv={{ familia: 'Los García', invita: 'Claudio', vigente: false }} next="/invitacion/x" conSesion={false} />}
+</App>

@@ -1,0 +1,60 @@
+---
+// Inicio. Sin sesión: qué es y "Entrar con Google". Con sesión: crear familia, o la familia.
+import App from '../layouts/App.astro';
+import CrearFamilia from '../components/CrearFamilia.astro';
+import Ingreso from '../components/Ingreso.astro';
+import Inicio from '../components/Inicio.astro';
+import type { Familia } from '../lib/familia';
+import { textoDeError } from '../lib/errores';
+import { supabaseServidor } from '../lib/supabase';
+
+export const prerender = false;
+
+const supabase = supabaseServidor(Astro.request, Astro.cookies);
+const { data: { user } } = await supabase.auth.getUser();
+
+let familia: Familia | null = null;
+let invitacionUrl: string | null = null;
+let error: string | null = null;
+let falla = false;
+const motivo = !user && Astro.url.searchParams.get('login') === 'error' ? textoDeError({ message: 'login' }) : null;
+
+if (user && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const accion = form.get('accion');
+  const texto = (k: string) => String(form.get(k) ?? '');
+  if (accion === 'crear_familia') {
+    const r = await supabase.rpc('crear_familia', { nombre: texto('nombre') });
+    if (!r.error) return Astro.redirect('/', 303);
+    error = textoDeError(r.error);
+  } else if (accion === 'agregar_hijo') {
+    const r = await supabase.rpc('agregar_hijo', { nombre: texto('nombre'), obra_social_id: texto('obra_social_id'), plan: texto('plan') || null });
+    if (!r.error) return Astro.redirect('/', 303);
+    error = textoDeError(r.error);
+  } else if (accion === 'invitar') {
+    const r = await supabase.rpc('crear_invitacion');
+    if (!r.error) invitacionUrl = new URL(`/invitacion/${r.data as string}`, Astro.url.origin).href;
+    else error = textoDeError(r.error);
+  }
+}
+
+if (user) {
+  const r = await supabase.rpc('mi_familia');
+  if (r.error) falla = true;
+  else familia = (r.data as Familia | null) ?? null;
+}
+
+const nombreAdulto = (user?.user_metadata?.full_name as string | undefined)?.split(' ')[0];
+if (falla) Astro.response.status = 503;
+---
+<App titulo={familia?.nombre ?? 'Inicio'} conSesion={!!user}>
+  {!user && <Ingreso motivo={motivo} />}
+  {user && falla && (
+    <section class="tarjeta">
+      <h1 class="titulo">Algo falló</h1>
+      <p class="apoyo">No pudimos cargar tu familia. Probá de nuevo en un rato.</p>
+    </section>
+  )}
+  {user && !falla && !familia && <CrearFamilia nombreAdulto={nombreAdulto} error={error} />}
+  {user && !falla && familia && <Inicio familia={familia} invitacionUrl={invitacionUrl} error={error} />}
+</App>

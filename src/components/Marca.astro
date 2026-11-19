@@ -1,0 +1,10 @@
+---
+// Isotipo: dos trazos que se cruzan, en los colores primario y terciario del tema.
+interface Props { tamano?: number }
+const { tamano = 32 } = Astro.props;
+---
+<svg width={tamano} height={tamano} viewBox="0 0 32 32" aria-hidden="true">
+  <rect width="32" height="32" rx="10" fill="var(--md-primary-container)" />
+  <path d="M9 20c0-5 3-9 7-9s7 4 7 9" fill="none" stroke="var(--md-primary)" stroke-width="3" stroke-linecap="round" />
+  <circle cx="16" cy="21" r="3.2" fill="var(--md-tertiary)" />
+</svg>

@@ -1,0 +1,34 @@
+---
+// `/invitacion/<código>`: vigente (con o sin sesión) o que ya no sirve.
+import type { InvitacionPublica } from '../lib/familia';
+import BotonGoogle from './BotonGoogle.astro';
+
+interface Props { inv: InvitacionPublica; next: string; conSesion: boolean; error?: string | null }
+const { inv, next, conSesion, error = null } = Astro.props;
+---
+{inv.vigente ? (
+  <>
+    <section class="hero">
+      <p class="apoyo">Invitación</p>
+      <h1 class="titular">{inv.invita} te invita a {inv.familia}</h1>
+      <p class="apoyo">Vas a ver y poder cambiar lo mismo que ve {inv.invita}: la semana de terapias y los papeles.</p>
+    </section>
+    {error && <p class="aviso" role="alert">{error}</p>}
+    <section class="tarjeta">
+      {conSesion ? (
+        <form method="post">
+          <input type="hidden" name="accion" value="sumarme" />
+          <button class="boton boton-relleno boton-ancho" type="submit">Sumarme</button>
+        </form>
+      ) : (
+        <BotonGoogle next={next} texto="Entrar con Google para sumarte" />
+      )}
+    </section>
+  </>
+) : (
+  <section class="tarjeta">
+    <h1 class="titulo">Esta invitación ya no sirve</h1>
+    <p class="apoyo">Pedile a {inv.invita} una nueva.</p>
+    <a class="boton boton-contorno" href="/">Ir al inicio</a>
+  </section>
+)}

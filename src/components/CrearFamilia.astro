@@ -1,0 +1,22 @@
+---
+// `/` con sesión y sin familia.
+interface Props { nombreAdulto?: string; error?: string | null }
+const { nombreAdulto, error = null } = Astro.props;
+---
+<section>
+  <h1 class="titular">{nombreAdulto ? `¡Hola, ${nombreAdulto}!` : '¡Hola!'}</h1>
+  <p class="apoyo">Empecemos por tu familia. Después invitás al otro adulto para que vean lo mismo.</p>
+</section>
+{error && <p class="aviso" role="alert">{error}</p>}
+<section class="tarjeta">
+  <h2 class="titulo">Creá tu familia</h2>
+  <form method="post">
+    <input type="hidden" name="accion" value="crear_familia" />
+    <div class="campo">
+      <label for="nombre-familia">Nombre de la familia</label>
+      <input id="nombre-familia" name="nombre" required maxlength="60" placeholder="Por ejemplo: Los García" autocomplete="off" />
+    </div>
+    <button class="boton boton-relleno boton-ancho" type="submit">Crear familia</button>
+  </form>
+  <p class="apoyo chico">¿Te invitaron a una familia? Abrí el link que te mandaron.</p>
+</section>

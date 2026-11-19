@@ -11,3 +11,5 @@
 - `@astrojs/vercel` no tiene `astro preview`: las páginas renderizadas en servidor se prueban con `astro dev`.
 - Una ruta inyectada con `injectRoute` solo cuando `command === 'dev'` no llega al build.
 - `@supabase/ssr` funciona con Astro 7 leyendo cookies con `parseCookieHeader(request.headers.get('Cookie'))` y escribiéndolas con `Astro.cookies.set`; probado el ida y vuelta login → callback → página con sesión contra un Supabase falso.
+- Con `output: 'server'` no hace falta `prerender = false` en cada página; se deja igual en las rutas por claridad.
+- Si la versión de `@playwright/test` no coincide con el Chromium instalado, `launchOptions.executablePath` (aquí, `CHROMIUM_PATH`) evita `npx playwright install`.

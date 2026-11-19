@@ -1,0 +1,103 @@
+---
+// `/` con familia: adultos, invitación e hijos.
+import type { Familia } from '../lib/familia';
+import { MAX_ADULTOS, OBRAS_SOCIALES } from '../lib/familia';
+import { linkInvitacion } from '../lib/whatsapp';
+
+interface Props { familia: Familia; invitacionUrl?: string | null; error?: string | null }
+const { familia, invitacionUrl = null, error = null } = Astro.props;
+const yo = familia.adultos.find((a) => a.soy_yo);
+const lleno = familia.adultos.length >= MAX_ADULTOS;
+const inicial = (s: string) => s.trim().charAt(0).toUpperCase();
+const sinHijos = familia.hijos.length === 0;
+---
+<section>
+  <h1 class="titular">{familia.nombre}</h1>
+  <p class="apoyo">{yo ? `Hola, ${yo.nombre}.` : ''} Esto es lo que ven todos los adultos de la familia.</p>
+</section>
+
+{error && <p class="aviso" role="alert">{error}</p>}
+
+<section class="tarjeta" aria-labelledby="t-adultos">
+  <div class="tarjeta-cabeza">
+    <h2 class="titulo" id="t-adultos">Adultos</h2>
+    <span class="etiqueta">{familia.adultos.length} de {MAX_ADULTOS}</span>
+  </div>
+  <ul class="lista">
+    {familia.adultos.map((a) => (
+      <li class="item">
+        <span class="avatar" aria-hidden="true">{inicial(a.nombre)}</span>
+        <span class="item-texto"><strong>{a.nombre}</strong>{a.soy_yo && <span class="apoyo">Vos</span>}</span>
+      </li>
+    ))}
+  </ul>
+  {invitacionUrl ? (
+    <div class="tarjeta tarjeta-tonal">
+      <h3 class="subtitulo">Mandale este link al otro adulto</h3>
+      <p class="link-invitacion" id="link-invitacion">{invitacionUrl}</p>
+      <div class="acciones">
+        <a class="boton boton-relleno" href={linkInvitacion(familia.nombre, invitacionUrl)} target="_blank" rel="noopener">Compartir por WhatsApp</a>
+        <button class="boton boton-contorno" type="button" data-copiar={invitacionUrl}>Copiar link</button>
+      </div>
+      <p class="apoyo chico">Sirve una sola vez y vence en 7 días.</p>
+    </div>
+  ) : (
+    <form method="post">
+      <input type="hidden" name="accion" value="invitar" />
+      <button class="boton boton-tonal boton-ancho" type="submit" disabled={lleno}>Invitar a otro adulto</button>
+      {lleno && <p class="apoyo chico">La familia ya tiene {MAX_ADULTOS} adultos, el máximo.</p>}
+    </form>
+  )}
+</section>
+
+<section class="tarjeta" aria-labelledby="t-hijos">
+  <h2 class="titulo" id="t-hijos">Hijos</h2>
+  {sinHijos ? (
+    <p class="apoyo">Todavía no cargaste a tu hijo o hija.</p>
+  ) : (
+    <ul class="lista">
+      {familia.hijos.map((h) => (
+        <li class="item">
+          <span class="avatar avatar-hijo" aria-hidden="true">{inicial(h.nombre)}</span>
+          <span class="item-texto"><strong>{h.nombre}</strong><span class="apoyo">{h.obra_social}{h.plan ? ` · Plan ${h.plan}` : ''}</span></span>
+        </li>
+      ))}
+    </ul>
+  )}
+  <details class="desplegable" open={sinHijos}>
+    <summary class="boton boton-contorno boton-ancho">Agregar hijo</summary>
+    <form method="post">
+      <input type="hidden" name="accion" value="agregar_hijo" />
+      <div class="campo">
+        <label for="nombre-hijo">Nombre o apodo</label>
+        <input id="nombre-hijo" name="nombre" required maxlength="40" autocomplete="off" />
+      </div>
+      <div class="fila-campos">
+        <div class="campo">
+          <label for="obra-social">Obra social</label>
+          <select id="obra-social" name="obra_social_id" required>
+            {OBRAS_SOCIALES.map((o) => <option value={o.id}>{o.nombre}</option>)}
+          </select>
+        </div>
+        <div class="campo">
+          <label for="plan">Plan (opcional)</label>
+          <input id="plan" name="plan" maxlength="30" autocomplete="off" />
+        </div>
+      </div>
+      <button class="boton boton-relleno boton-ancho" type="submit">Guardar</button>
+    </form>
+  </details>
+</section>
+
+<script>
+  for (const b of document.querySelectorAll<HTMLButtonElement>('[data-copiar]')) {
+    b.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(b.dataset.copiar ?? '');
+        b.textContent = '¡Copiado!';
+      } catch {
+        b.textContent = 'No se pudo copiar';
+      }
+    });
+  }
+</script>

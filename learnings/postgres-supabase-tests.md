@@ -8,3 +8,4 @@
 - Con `search_path = ''` todo va calificado, incluido `extensions.gen_random_bytes`; `gen_random_uuid()` está en `pg_catalog` y no lo necesita.
 - Un voto suma como mucho 1 a cada opción: dos opciones solo llegan juntas al quórum empatadas. El caso "llegan juntas con distintos votos" solo se prueba sembrando el estado directo en la base.
 - `pkill -f <patrón>` desde un shell cuyo comando contiene el patrón se mata a sí mismo: filtrar por `comm` (`ps -eo pid,comm,args`).
+- Como root (contenedores), `embedded-postgres` no arranca: `createPostgresUser: true` y la carpeta temporal con permiso 755 para el usuario `postgres`.

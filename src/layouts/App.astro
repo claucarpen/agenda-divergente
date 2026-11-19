@@ -1,0 +1,32 @@
+---
+// Layout único de la app: barra superior y contenido centrado, celular primero.
+import '../styles/app.css';
+import Marca from '../components/Marca.astro';
+
+interface Props { titulo: string; conSesion?: boolean }
+const { titulo, conSesion = false } = Astro.props;
+---
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#006a60" />
+    <title>{titulo} · Agenda Divergente</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <header class="barra">
+      <a class="barra-marca" href="/"><Marca /> Agenda Divergente</a>
+      {conSesion && (
+        <form method="post" action="/auth/salir">
+          <button class="boton boton-texto" type="submit">Salir</button>
+        </form>
+      )}
+    </header>
+    <main class="contenido">
+      <slot />
+    </main>
+  </body>
+</html>

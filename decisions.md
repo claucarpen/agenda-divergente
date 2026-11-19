@@ -39,3 +39,21 @@
 **Qué se decide**: lenguaje visual de Material 3: color tonal derivado de un color semilla con roles (primary, secondary, surface, container), esquinas redondeadas, elevación tonal en lugar de sombras duras, tipografía sans moderna, mucho aire. Nada retro ni pixel art.
 **Por qué**: decisión del operador (2026-11-18): no quiere la estética retrogaming de Nos Vemos sino algo limpio y fresco; además, Material es el lenguaje que reconocen los usuarios de Android y se lee bien en iPhone.
 **La invalidaría**: que el operador elija otra dirección sobre las capturas de la spec 001.
+
+## 2026-11-18 · [diseño] Semilla verde agua #2f8f83, tipografía Figtree y Material 3 sin librería de componentes
+
+**Qué se decide**: los colores salen de `scripts/generar-tokens.mjs` (Material Color Utilities 0.4.0, roles de Material 3 en claro y oscuro) y los componentes son CSS propio en `src/styles/app.css`. Tipografía Figtree variable, autoalojada.
+**Por qué**: verde agua se lee fresco y sereno, no clínico. Una librería de componentes web sumaría peso y dependencia para cinco pantallas de formularios; los tokens dan la misma coherencia de color. Figtree es una sans geométrica moderna y legible en celular, con licencia OFL. Contraste AA medido en todos los pares (`scripts/contraste.mjs`, mínimo 5,51:1).
+**La invalidaría**: que el operador elija otra semilla o tipografía sobre las capturas, o que las pantallas crezcan al punto de que mantener componentes propios cueste más que una librería.
+
+## 2026-11-18 · [stack] Sin islas de React en la spec 001
+
+**Qué se decide**: las páginas son Astro con formularios POST; la única interactividad (copiar el link) es un `<script>` chico. `@astrojs/react` no está instalado.
+**Por qué**: la spec pide React solo donde haya interactividad y acá no la hay; menos dependencias y menos JavaScript en el celular.
+**La invalidaría**: una spec con interactividad real (por ejemplo, el calendario de la 002).
+
+## 2026-11-18 · [tests] Los tests corren también como root y con un Chromium ya instalado
+
+**Qué se decide**: `tests/db/pg.ts` usa `createPostgresUser` cuando el proceso es root; `playwright.app.config.ts` y `scripts/capturas.mjs` aceptan `CHROMIUM_PATH` opcional.
+**Por qué**: el agente corre en un contenedor como root, donde Postgres no arranca y la versión de Playwright no coincide con el Chromium instalado. En la máquina del operador nada cambia.
+**La invalidaría**: que los tests corran solo en la máquina del operador o en un CI propio.

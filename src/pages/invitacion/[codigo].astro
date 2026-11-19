@@ -1,0 +1,55 @@
+---
+// Una invitación. Sin sesión: quién invita y "Entrar con Google para sumarte". Con sesión: "Sumarme".
+import App from '../../layouts/App.astro';
+import Invitacion from '../../components/Invitacion.astro';
+import { esCodigo } from '../../lib/codigo';
+import { textoDeError } from '../../lib/errores';
+import type { InvitacionPublica } from '../../lib/familia';
+import { supabaseServidor } from '../../lib/supabase';
+
+export const prerender = false;
+
+const { codigo } = Astro.params;
+const ruta = `/invitacion/${codigo}`;
+
+let estado: 'no_existe' | 'invitacion' | 'falla' = 'no_existe';
+let inv: InvitacionPublica | null = null;
+let conSesion = false;
+let error: string | null = null;
+
+if (esCodigo(codigo)) {
+  const supabase = supabaseServidor(Astro.request, Astro.cookies);
+  const { data: { user } } = await supabase.auth.getUser();
+  conSesion = !!user;
+  if (!user && Astro.url.searchParams.get('login') === 'error') error = textoDeError({ message: 'login' });
+
+  if (user && Astro.request.method === 'POST') {
+    const r = await supabase.rpc('aceptar_invitacion', { codigo });
+    if (!r.error) return Astro.redirect('/', 303);
+    error = textoDeError(r.error);
+  }
+
+  const p = await supabase.rpc('invitacion_publica', { codigo });
+  if (p.error) estado = 'falla';
+  else if (Array.isArray(p.data) && p.data.length > 0) { estado = 'invitacion'; inv = p.data[0] as InvitacionPublica; }
+}
+
+if (estado === 'no_existe') Astro.response.status = 404;
+if (estado === 'falla') Astro.response.status = 503;
+---
+<App titulo="Invitación" conSesion={conSesion}>
+  {estado === 'invitacion' && inv && <Invitacion inv={inv} next={ruta} conSesion={conSesion} error={error} />}
+  {estado === 'no_existe' && (
+    <section class="tarjeta">
+      <h1 class="titulo">Esta invitación no existe</h1>
+      <p class="apoyo">Revisá el link que te mandaron.</p>
+      <a class="boton boton-contorno" href="/">Ir al inicio</a>
+    </section>
+  )}
+  {estado === 'falla' && (
+    <section class="tarjeta">
+      <h1 class="titulo">Algo falló</h1>
+      <p class="apoyo">No pudimos cargar la invitación. Probá de nuevo en un rato.</p>
+    </section>
+  )}
+</App>

@@ -1,5 +1,5 @@
 ---
-status: aprobada
+status: implementada
 depends_on: []
 ---
 
@@ -168,3 +168,52 @@ del operador siguiendo el README. El link de WhatsApp solo abre WhatsApp con un 
 | Adultos de solo lectura (abuelos, niñera) | Lo pide una familia de prueba |
 | Más de una familia por adulto | Un adulto real lo necesita |
 | Otras obras sociales en la semilla | Se suma una familia con otra obra social |
+
+## Evidencia de implementación (2026-11-18)
+
+Rama `spec/001-impl`. Decisiones nuevas: `decisions.md`, entradas `[diseño]`, `[stack]` y `[tests]`
+del 2026-11-18.
+
+### Paso 0
+
+Pasó antes de construir nada: `embedded-postgres` 17.10 + `tests/db/supabase-shim.sql`, 3 tests en
+`tests/db/shim.test.ts`.
+
+### `evals/run.sh`
+
+```
+PASS 001·C0 Postgres embebido + shim de Supabase
+PASS 001·C1 el proyecto compila
+PASS 001·C2 migración: 7 tablas con RLS, 8 funciones security definer, sin datos prohibidos
+PASS 001·C3 reglas y seguridad en la base
+     |       Tests  28 passed (28)
+PASS 001·C4 link de invitación por WhatsApp (Vitest)
+     |       Tests  2 passed (2)
+PASS 001·C5 páginas sin sesión (Playwright)
+     |   3 passed (4.3s)
+PASS 001·C6 la vista previa no llega a producción
+PASS 001·C7 sin secretos
+PASS 001·C8 (parte automática) contraste AA de todos los pares, claro y oscuro
+PASS 001·C9 README con las secciones del operador
+
+10 pasan, 0 fallan
+```
+
+C2 y C6 se probaron en negativo: con una columna `diagnostico` C2 falla, y con "vista-previa" en
+`.vercel/output` C6 falla.
+
+### C8 — rúbrica
+
+Capturas en `docs/capturas/001/` (6 pantallas a 375 y 1280 px, y a 375 px en modo oscuro).
+
+1. Inicio: el nombre de la familia arriba, la tarjeta "Adultos" con "2 de 4" y el botón "Invitar
+   a otro adulto" debajo de la lista. ✓
+2. Contraste AA en todos los pares de botones y textos, claro y oscuro: mínimo 5,51:1
+   (`scripts/contraste.mjs`). Botones de 48 px de alto. ✓
+3. Español rioplatense ("Creá", "Mandale", "Pedile", "Sumarme"). ✓
+4. Del hijo solo aparecen nombre, obra social y plan. ✓
+5. Verde agua, superficies claras, sin vocabulario clínico; la única mención es "No guardamos
+   diagnósticos, informes ni documentos". ✓
+6. Roles tonales en `src/styles/tokens.css`, esquinas de 24 a 28 px, sin sombras duras, Figtree. ✓
+
+La vista previa suma una sexta pantalla, `inicio-invitando`, con el link recién generado.
