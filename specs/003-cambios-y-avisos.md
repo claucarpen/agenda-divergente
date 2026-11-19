@@ -1,5 +1,5 @@
 ---
-status: borrador
+status: aprobada
 depends_on: [002]
 ---
 
@@ -44,7 +44,7 @@ Si el paso 0 no pasa, **parar y reportar** con alternativas. No construir nada m
 
 | Tabla | Columnas clave |
 |---|---|
-| `cambios` | `id`, `horario_id` (FK), `alcance` (`una_vez` \| `periodo`), `fecha date` (una vez: el día del turno original), `desde date` / `hasta date` (período), `accion` (`mover` \| `cancelar`), `nueva_fecha date` (una vez + mover), `nuevo_dia_semana` (período + mover), `nueva_hora time` (mover), `creado_por`, `creado_en`, `anulado_en` nullable |
+| `cambios` | `id`, `horario_id` (FK), `alcance` (`una_vez` \| `periodo`), `fecha date` (una vez: el día del turno original), `desde date` / `hasta date` (período), `accion` (`mover` \| `cancelar`), `nueva_fecha date` (una vez + mover), `nuevo_dia_semana` (período + mover), `nueva_hora time` (mover), `nota` (1-80, nullable), `creado_por`, `creado_en`, `anulado_en` nullable |
 | `suscripciones_push` | `id`, `perfil_id`, `endpoint text unique`, `p256dh`, `auth`, `creada_en`, `ultimo_ok` nullable |
 
 Restricciones de forma: una vez exige `fecha`; período exige `desde ≤ hasta` y que el período no
@@ -55,12 +55,12 @@ dos cambios no anulados que se pisen en la misma fecha (`cambio_superpuesto`).
 
 | Función | Qué hace |
 |---|---|
-| `cambiar_turno_una_vez(horario_id, fecha, accion, nueva_fecha, nueva_hora)` | Valida que el horario sea de la familia y que `fecha` sea un día en que ese horario tiene turno |
-| `cambiar_turno_periodo(horario_id, desde, hasta, accion, nuevo_dia_semana, nueva_hora)` | Valida familia, rango y tope |
+| `cambiar_turno_una_vez(horario_id, fecha, accion, nueva_fecha, nueva_hora, nota)` | Valida que el horario sea de la familia y que `fecha` sea un día en que ese horario tiene turno |
+| `cambiar_turno_periodo(horario_id, desde, hasta, accion, nuevo_dia_semana, nueva_hora, nota)` | Valida familia, rango y tope |
 | `anular_cambio(id)` | Marca `anulado_en`: el turno vuelve a su horario fijo |
 | `cambios_vigentes()` | Cambios no anulados que terminan hoy o después, con terapia, horario original y quién los hizo |
 | `guardar_suscripcion(endpoint, p256dh, auth)` / `borrar_suscripcion(endpoint)` | De quien llama |
-| `destinatarios_aviso()` | Suscripciones de los **otros** adultos de la familia de quien llama (endpoint y claves; nunca emails) |
+| `destinatarios_aviso()` | Suscripciones de **todos** los adultos de la familia de quien llama, incluido quien llama (endpoint y claves; nunca emails) |
 | `marcar_suscripcion(endpoint, ok)` | Con `ok` registra `ultimo_ok`; sin `ok` (el servicio respondió 404 o 410) la borra. Solo para suscripciones de la propia familia |
 | `estado_avisos()` | Por adulto de la familia: nombre y si tiene al menos un celular suscripto |
 
@@ -75,8 +75,9 @@ original ("antes jue 15:00"). Los horarios fijos no se tocan.
   → `marcar_suscripcion(endpoint, false)`. Un aviso que falla **nunca** hace fallar el cambio.
 - Disparan aviso: cambiar un turno (una vez o período), anular un cambio, agregar o quitar un
   horario fijo, terminar una terapia, agregar o quitar un evento de la familia.
-- El texto lo arma una función pura (ver decisiones pendientes): título "Cambio en la semana" y un
-  cuerpo de una línea con qué cambió, cuándo y quién. Tocar el aviso abre `/semana` en la semana
+- El texto lo arma una función pura: título "Cambio en la semana" y un cuerpo de una línea con qué
+  cambió, cuándo y quién, sin el nombre del hijo ni la nota (p. ej. "Terapia ocupacional: jue 26/11
+  15:00 → vie 27/11 17:00. Lo cambió Laura"). Tocar el aviso abre `/semana` en la semana
   del cambio.
 - Claves: `PUBLIC_VAPID_PUBLIC_KEY` (pública) y `VAPID_PRIVATE_KEY` + `VAPID_SUBJECT` (solo en el
   servidor, variables de Vercel). Sin claves configuradas, la app funciona y los avisos no salen.
@@ -94,8 +95,10 @@ original ("antes jue 15:00"). Los horarios fijos no se tocan.
 
 - **Cambiar un turno**: cada turno de la semana abre una hoja "Cambiar este turno" con tres
   caminos: "Moverlo" (fecha y hora nuevas, por defecto el mismo día), "No hay ese día" y "Cambiar
-  durante un período" (desde, hasta, día y hora nuevos, o "no hay"). Tiene que poder hacerse en
-  tres toques más la hora.
+  durante un período" (desde, hasta, día y hora nuevos, o "no hay"). Nota corta opcional ("Nota
+  (opcional)", hasta 80 caracteres, con la ayuda "No pongas datos de salud"). Tiene que poder
+  hacerse en tres toques más la hora. La nota se ve en la semana y en la terapia, nunca en el
+  aviso.
 - **Cambios en curso**: en `/terapias/<id>`, la lista de cambios vigentes de esa terapia con
   "Deshacer" (anula).
 - **Avisos** (nueva sección dentro de `/familia`):
@@ -119,8 +122,8 @@ Los deterministas se agregan a `evals/run.sh`. **Los de la 001 y la 002 siguen y
 | C0 | Web Push sale hacia un servicio de push | Test del paso 0 contra el servicio falso local |
 | C1 | Compila y no rompe nada | `evals/run.sh` completo: 0 fallan |
 | C2 | La migración tiene la forma pedida | `grep` sobre `003_cambios.sql`: las 2 tablas con RLS; las 9 funciones con `security definer` y `set search_path`; ninguna política de escritura para `authenticated`; sin `drop table`; `destinatarios_aviso` no devuelve `email` |
-| C3 | Las reglas y la seguridad funcionan en la base | `npm run test:db` pasa con, como mínimo: cambio de un horario de otra familia → `ajeno` · una vez en un día sin turno → rechazo · período con `desde > hasta` o de más de 180 días → rechazo · dos cambios superpuestos → `cambio_superpuesto` · `semana` muestra el turno movido en su día y hora nuevos con el original, el cancelado marcado y, fuera del período, el horario fijo · un cambio anulado deja de aplicarse · un movimiento de la semana a otra semana aparece en la nueva y desaparece de la vieja · `destinatarios_aviso` devuelve solo las suscripciones de los otros adultos de la familia, nunca las propias ni las de otra familia · `marcar_suscripcion(…, false)` borra y no puede tocar suscripciones de otra familia · `anon` no lee ni ejecuta nada nuevo · `movimientos` registra los 4 tipos nuevos |
-| C4 | El aviso dice lo correcto | `npm test` pasa con: texto de mover una vez, cancelar, período y anular, con fechas "jue 26/11" y horas "15:00"; la URL del aviso apunta a `/semana?desde=<lunes del cambio>`; un error del servicio de push no se propaga; 404 y 410 marcan la suscripción para borrar |
+| C3 | Las reglas y la seguridad funcionan en la base | `npm run test:db` pasa con, como mínimo: cambio de un horario de otra familia → `ajeno` · una vez en un día sin turno → rechazo · período con `desde > hasta` o de más de 180 días → rechazo · dos cambios superpuestos → `cambio_superpuesto` · `semana` muestra el turno movido en su día y hora nuevos con el original, el cancelado marcado y, fuera del período, el horario fijo · un cambio anulado deja de aplicarse · un movimiento de la semana a otra semana aparece en la nueva y desaparece de la vieja · `destinatarios_aviso` devuelve las suscripciones de todos los adultos de la familia, incluida la de quien llama, y nunca las de otra familia · una nota de más de 80 caracteres → rechazo · `marcar_suscripcion(…, false)` borra y no puede tocar suscripciones de otra familia · `anon` no lee ni ejecuta nada nuevo · `movimientos` registra los 4 tipos nuevos |
+| C4 | El aviso dice lo correcto | `npm test` pasa con: texto de mover una vez, cancelar, período y anular, con fechas "jue 26/11" y horas "15:00"; el cuerpo nunca incluye el nombre del hijo ni la nota; la URL del aviso apunta a `/semana?desde=<lunes del cambio>`; un error del servicio de push no se propaga; 404 y 410 marcan la suscripción para borrar |
 | C5 | Se puede instalar | Playwright: `/manifest.webmanifest` responde con `name`, `start_url`, `display: standalone` e íconos 192 y 512 que existen; `/sw.js` responde con `content-type` JavaScript; el layout tiene `rel="manifest"` y `apple-touch-icon`; las páginas nuevas sin sesión redirigen a `/` |
 | C6 | La vista previa no llega a producción | Sigue pasando `001·C6` |
 | C7 | Sin secretos | Sigue pasando `001·C7`, más: ninguna clave privada VAPID en el repo (`grep` de `VAPID_PRIVATE_KEY=` con valor y de claves base64url de 43 caracteres en `src/`, `public/`, `scripts/`); `VAPID_PRIVATE_KEY` solo se lee en código de servidor |
@@ -146,17 +149,14 @@ Los deterministas se agregan a `evals/run.sh`. **Los de la 001 y la 002 siguen y
 - DECIDIDO por Claudio (2026-11-18): web app instalable, no app nativa.
 - DECIDIDO por Claudio (2026-11-18): los dos adultos tienen el mismo perfil y ambos cambian
   turnos.
-
-### Pendientes del operador (antes de aprobar)
-
-- **Qué muestra el aviso en la pantalla bloqueada**. Propuesta: el detalle, sin el nombre del
-  hijo ("Terapia ocupacional: jue 26/11 15:00 → vie 27/11 17:00. Lo cambió Laura").
-  Alternativa: un texto genérico ("Hubo un cambio en la semana"), y el detalle al abrir la app.
-- **Nota libre en el cambio** ("la terapeuta está de vacaciones"). Propuesta: no, para que no se
-  carguen datos de salud por error. Alternativa: una nota de hasta 80 caracteres.
-- **Qué dispara aviso**. Propuesta: la lista de "Avisos" de arriba (turnos, horarios fijos,
-  terapias terminadas y eventos). Alternativa: solo los cambios de turno.
-- **Quién recibe**. Propuesta: todos los adultos de la familia menos quien hizo el cambio.
+- DECIDIDO por Claudio (2026-11-18): el aviso en la pantalla bloqueada muestra el detalle, sin el
+  nombre del hijo: "Terapia ocupacional: jue 26/11 15:00 → vie 27/11 17:00. Lo cambió Laura".
+- DECIDIDO por Claudio (2026-11-18): nota corta opcional en el cambio (hasta 80 caracteres); no
+  viaja en el aviso.
+- DECIDIDO por Claudio (2026-11-18): disparan aviso los cambios de turno, los horarios fijos que se
+  agregan o quitan, las terapias que terminan y los eventos de la familia.
+- DECIDIDO por Claudio (2026-11-18): reciben el aviso **todos** los adultos de la familia, incluido
+  quien hizo el cambio.
 
 ### Las decide quien implementa
 
