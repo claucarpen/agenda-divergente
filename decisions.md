@@ -109,7 +109,7 @@
 
 ## 2026-11-19 · [datos] Avatares ilustrados de una galería cerrada, sin fotos
 
-**Qué se decide**: `perfiles.avatar` e `hijos.avatar` guardan el id de uno de 12 personajes propios (`public/avatares/`), con `check` contra la lista. Ningún archivo ni URL de imagen.
+**Qué se decide**: `perfiles.avatar` e `hijos.avatar` guardan el id de uno de 13 personajes propios (`public/avatares/`), con `check` contra la lista. Ningún archivo ni URL de imagen.
 **Por qué**: la familia quería personalizar sin subir fotos de una menor; la regla `2026-11-18 · [datos]` no cambia. Los personajes son originales del proyecto, no de terceros.
 **La invalidaría**: una decisión del operador de permitir fotos reales, con almacenamiento privado y sin metadatos.
 

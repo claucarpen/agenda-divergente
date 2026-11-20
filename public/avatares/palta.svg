@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Palta">
+<title>Palta</title>
+<circle cx="48" cy="48" r="48" fill="#eef7d2"/>
+<g><path d="M48 10 C60 10 66 24 70 36 C76 50 82 58 80 70 C78 84 64 90 48 90 C32 90 18 84 16 70 C14 58 20 50 26 36 C30 24 36 10 48 10 Z" fill="#3f7d2c"/><path d="M48 16 C57 16 62 27 65 38 C70 51 75 58 73 69 C71 80 60 85 48 85 C36 85 25 80 23 69 C21 58 26 51 31 38 C34 27 39 16 48 16 Z" fill="#c9e58a"/><path d="M48 20 C55 20 59 29 61 38 C64 48 68 55 67 63 C66 71 58 76 48 76 C38 76 30 71 29 63 C28 55 32 48 35 38 C37 29 41 20 48 20 Z" fill="#e4f4b4"/><circle cx="48" cy="66" r="13" fill="#9a5b34"/><circle cx="44" cy="62" r="3.5" fill="#c08158"/><circle cx="40" cy="42" r="4.2" fill="#1f2a28"/><circle cx="41.47" cy="40.32" r="1.47" fill="#fff"/><circle cx="56" cy="42" r="4.2" fill="#1f2a28"/><circle cx="57.47" cy="40.32" r="1.47" fill="#fff"/><ellipse cx="34" cy="50" rx="5" ry="3.2" fill="#ff8f8f" opacity=".55"/><ellipse cx="62" cy="50" rx="5" ry="3.2" fill="#ff8f8f" opacity=".55"/><path d="M44.5 49 q3.5 4.2 7 0" fill="none" stroke="#1f2a28" stroke-width="2.6" stroke-linecap="round"/></g>
+</svg>

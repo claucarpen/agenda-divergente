@@ -129,7 +129,7 @@ escribe la familia y sí viaja). Tocar el aviso abre `/semana` en la semana del 
 - **Avatares**: en `/familia`, tocar el avatar de un adulto (solo el propio) o de un hijo abre
   `/avatar` con la galería; "Usar la inicial" vuelve al círculo con la letra. El avatar se ve en
   `/familia`, en la cabecera de la semana (el hijo) y en "Lo agregó / Lo cambió" donde aparezca.
-- **Galería**: 12 personajes originales en SVG, propios del proyecto, en la paleta de Material 3 de
+- **Galería**: 13 personajes originales en SVG, propios del proyecto, en la paleta de Material 3 de
   la app (animales y criaturas simples con cara amable). Versionados en `public/avatares/`, cada uno
   con nombre accesible ("Zorro", "Pulpo", …). **No** copian ni imitan personajes de terceros.
 - **Avisos** (`/familia`): un interruptor "Recordatorios (10 minutos antes y el día anterior)" por
@@ -185,7 +185,7 @@ Los deterministas se agregan a `evals/run.sh`. **Los de la 001 a la 003 siguen y
 
 ### Las decide quien implementa
 
-- Cómo se dibujan los 12 personajes (a mano en SVG, dentro de la paleta).
+- Cómo se dibujan los 13 personajes (a mano en SVG, dentro de la paleta).
 - Cómo se cruza en SQL la hora de Buenos Aires con `ahora` (registrar en `decisions.md`).
 
 ### Condiciones de parada (el agente para y pregunta)
@@ -283,6 +283,6 @@ Capturas en `docs/capturas/004/` (4 pantallas a 375 y 1280 px, y a 375 px en mod
 2. Evento con fecha: tarjeta blanca con borde terciario y etiqueta "Evento"; terapia: relleno
    verde; evento semanal: relleno azul con borde izquierdo; todo el día: franja azul oscura arriba
    del día. ✓
-3. Los 12 personajes se distinguen a 40 px (galería renderizada a 96 y 40 px) y son originales del
+3. Los 13 personajes se distinguen a 40 px (galería renderizada a 96 y 40 px) y son originales del
    proyecto. ✓
 4. Mismos tokens; contraste AA de los 5 pares nuevos en claro y oscuro; botones de 48 px. ✓

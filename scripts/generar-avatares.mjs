@@ -100,6 +100,12 @@ const PERSONAJES = {
     <circle cx="38" cy="46" r="24" fill="#e0785a"/>
     <path d="M38 46 m0 -16 a16 16 0 1 1 -14 22 a11 11 0 1 1 18 -12 a6 6 0 1 1 -7 7" fill="none" stroke="#b9533a" stroke-width="3.2" stroke-linecap="round"/>
     ${ojos(64, 76, 54, 3.4)}${cachetes(60, 80, 62)}${sonrisa(70, 66, 6)}`],
+  palta: ['Palta', '#eef7d2', `
+    <path d="M48 10 C60 10 66 24 70 36 C76 50 82 58 80 70 C78 84 64 90 48 90 C32 90 18 84 16 70 C14 58 20 50 26 36 C30 24 36 10 48 10 Z" fill="#3f7d2c"/>
+    <path d="M48 16 C57 16 62 27 65 38 C70 51 75 58 73 69 C71 80 60 85 48 85 C36 85 25 80 23 69 C21 58 26 51 31 38 C34 27 39 16 48 16 Z" fill="#c9e58a"/>
+    <path d="M48 20 C55 20 59 29 61 38 C64 48 68 55 67 63 C66 71 58 76 48 76 C38 76 30 71 29 63 C28 55 32 48 35 38 C37 29 41 20 48 20 Z" fill="#e4f4b4"/>
+    <circle cx="48" cy="66" r="13" fill="#9a5b34"/><circle cx="44" cy="62" r="3.5" fill="#c08158"/>
+    ${ojos(40, 56, 42)}${cachetes(34, 62, 50)}${sonrisa(48, 49, 7)}`],
 };
 
 const svg = (nombre, fondo, cuerpo) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="${nombre}">

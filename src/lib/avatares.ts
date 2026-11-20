@@ -13,6 +13,7 @@ export const AVATARES = [
   { id: 'ballena', nombre: 'Ballena' },
   { id: 'dino', nombre: 'Dino' },
   { id: 'caracol', nombre: 'Caracol' },
+  { id: 'palta', nombre: 'Palta' },
 ] as const;
 export type AvatarId = (typeof AVATARES)[number]['id'];
 export const esAvatar = (v: unknown): v is AvatarId => AVATARES.some((a) => a.id === v);

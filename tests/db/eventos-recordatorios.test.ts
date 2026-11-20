@@ -189,10 +189,10 @@ describe('avatares', () => {
   test('elegir el propio y el de un hijo; se ven en mi_familia', async () => {
     const f = await familia();
     await uno(f.adulto, "select public.elegir_avatar('zorro')");
-    await uno(f.adulto, "select public.elegir_avatar_hijo($1, 'pulpo')", [f.hijo]);
+    await uno(f.adulto, "select public.elegir_avatar_hijo($1, 'palta')", [f.hijo]);
     const { fam } = await uno(f.adulto, 'select public.mi_familia() as fam');
     expect(fam.adultos[0]).toMatchObject({ soy_yo: true, avatar: 'zorro' });
-    expect(fam.hijos[0]).toMatchObject({ avatar: 'pulpo' });
+    expect(fam.hijos[0]).toMatchObject({ avatar: 'palta' });
     expect(fam.recordatorios).toBe(true);
     await uno(f.adulto, 'select public.elegir_avatar(null)');
     expect((await uno(f.adulto, 'select public.mi_familia() as fam')).fam.adultos[0].avatar).toBeNull();

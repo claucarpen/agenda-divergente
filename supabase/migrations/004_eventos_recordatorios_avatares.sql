@@ -37,9 +37,9 @@ revoke all on public.eventos_fecha, public.recordatorios_enviados, public.config
 
 -- Galería cerrada de avatares (public/avatares/<id>.svg).
 alter table public.perfiles add column avatar text check (avatar is null or avatar in (
-  'zorro', 'pulpo', 'buho', 'gato', 'perro', 'conejo', 'oso', 'pinguino', 'rana', 'ballena', 'dino', 'caracol'));
+  'zorro', 'pulpo', 'buho', 'gato', 'perro', 'conejo', 'oso', 'pinguino', 'rana', 'ballena', 'dino', 'caracol', 'palta'));
 alter table public.hijos add column avatar text check (avatar is null or avatar in (
-  'zorro', 'pulpo', 'buho', 'gato', 'perro', 'conejo', 'oso', 'pinguino', 'rana', 'ballena', 'dino', 'caracol'));
+  'zorro', 'pulpo', 'buho', 'gato', 'perro', 'conejo', 'oso', 'pinguino', 'rana', 'ballena', 'dino', 'caracol', 'palta'));
 alter table public.perfiles add column recordatorios boolean not null default true;
 
 alter table public.movimientos drop constraint movimientos_tipo_check;
