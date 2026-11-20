@@ -1,0 +1,13 @@
+---
+// Avatar de un adulto o un hijo (spec 004): el personaje elegido o, si no hay, la inicial.
+import { esAvatar, nombreAvatar, urlAvatar } from '../lib/avatares';
+
+interface Props { avatar?: string | null; nombre: string; hijo?: boolean; tam?: number }
+const { avatar = null, nombre, hijo = false, tam = 40 } = Astro.props;
+const inicial = nombre.trim().charAt(0).toUpperCase();
+---
+{esAvatar(avatar) ? (
+  <img class="avatar avatar-img" src={urlAvatar(avatar)} alt="" width={tam} height={tam} title={nombreAvatar(avatar)} style={`width:${tam}px;height:${tam}px`} />
+) : (
+  <span class:list={['avatar', { 'avatar-hijo': hijo }]} aria-hidden="true" style={tam !== 40 ? `width:${tam}px;height:${tam}px;font-size:${Math.round(tam * 0.42)}px` : undefined}>{inicial}</span>
+)}

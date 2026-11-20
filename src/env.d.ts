@@ -6,4 +6,5 @@ interface ImportMetaEnv {
   readonly PUBLIC_VAPID_PUBLIC_KEY?: string;
   readonly VAPID_PRIVATE_KEY?: string;
   readonly VAPID_SUBJECT?: string;
+  readonly CRON_SECRET?: string;
 }

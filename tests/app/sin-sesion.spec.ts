@@ -32,7 +32,7 @@ test.describe('375 px', () => {
 });
 
 // Spec 002, C5: las páginas nuevas sin sesión redirigen a `/` y no exponen nada.
-for (const ruta of ['/semana', '/terapias', '/familia', '/terapias/00000000-0000-4000-8000-000000000000']) {
+for (const ruta of ['/semana', '/terapias', '/familia', '/terapias/00000000-0000-4000-8000-000000000000', '/evento', '/evento?id=00000000-0000-4000-8000-000000000000', '/avatar']) {
   test(`002·C5: ${ruta} sin sesión redirige a /`, async ({ request }) => {
     const res = await request.get(ruta, { maxRedirects: 0 });
     expect([302, 303]).toContain(res.status());

@@ -6,6 +6,8 @@ import Ingreso from '../components/Ingreso.astro';
 import Inicio from '../components/Inicio.astro';
 import Invitacion from '../components/Invitacion.astro';
 import Avisos from '../components/Avisos.astro';
+import ElegirAvatar from '../components/ElegirAvatar.astro';
+import FormEvento from '../components/FormEvento.astro';
 import CambiarTurno from '../components/CambiarTurno.astro';
 import Semana from '../components/Semana.astro';
 import TerapiaDetalle from '../components/TerapiaDetalle.astro';
@@ -71,7 +73,18 @@ conCambios[4].ocurrencias = [
 ];
 const turno: Turno = { horario_id: 'x2', fecha: sumarDias(LUNES, 3), hay_turno: true, dia_semana: 4, hora: '16:00', duracion_min: 45, terapia: to, cambio: null };
 const estadoAvisos = [{ nombre: 'Claudio', soy_yo: true, activos: true }, { nombre: 'Laura', soy_yo: false, activos: false }];
-const seccion = pantalla === 'semana' || pantalla === 'semana-vacia' || pantalla === 'semana-con-cambios' || pantalla === 'cambiar-turno' ? 'semana'
+// Spec 004: eventos con fecha (uno de todo el día y uno con hora), avatares y recordatorios.
+const conAvatares: Familia = {
+  ...familia,
+  adultos: [{ nombre: 'Claudio', soy_yo: true, avatar: 'oso' }, { nombre: 'Laura', soy_yo: false, avatar: 'buho' }],
+  hijos: [{ ...familia.hijos[0], avatar: 'pulpo' }],
+};
+const conEventos: Dia[] = conCambios.map((d) => ({ ...d, ocurrencias: [...d.ocurrencias] }));
+conEventos[4].todo_el_dia = [{ clase: 'evento_fecha', id: 'f1', titulo: 'Acto de fin de año', fecha: sumarDias(LUNES, 4), hora: null, todo_el_dia: true, nota: null, hijo_id: 'h1', hijo: 'Mora', quien: 'Laura', quien_avatar: 'buho' }];
+conEventos[5].ocurrencias = [{ clase: 'evento_fecha', evento_id: 'f2', id: 'f2', inicio: '17:00', titulo: 'Cumple de Sofi', fecha: sumarDias(LUNES, 5), hora: '17:00', todo_el_dia: false, nota: 'Salón Pelotero, Av. Rivadavia 1234', hijo_id: 'h1', hijo: 'Mora', quien: 'Claudio', quien_avatar: 'oso' }];
+const seccion = pantalla === 'semana-con-eventos' || pantalla === 'evento-nuevo' ? 'semana'
+  : pantalla === 'galeria-avatares' || pantalla === 'familia-con-avatares' ? 'familia'
+  : pantalla === 'semana' || pantalla === 'semana-vacia' || pantalla === 'semana-con-cambios' || pantalla === 'cambiar-turno' ? 'semana'
   : pantalla?.startsWith('avisos') ? 'familia'
   : pantalla?.startsWith('terapia') ? 'terapias'
   : pantalla?.startsWith('inicio') ? 'familia' : undefined;
@@ -90,5 +103,14 @@ const seccion = pantalla === 'semana' || pantalla === 'semana-vacia' || pantalla
   {pantalla === 'semana-con-cambios' && <Semana lunes={LUNES} hoy={HOY} dias={conCambios} hayTerapias />}
   {pantalla === 'cambiar-turno' && <CambiarTurno t={turno} />}
   {pantalla === 'avisos' && <Avisos estado={estadoAvisos} vapidPublica="ejemplo" pasoForzado="activo" />}
+  {pantalla === 'evento-nuevo' && <FormEvento evento={null} fecha={sumarDias(LUNES, 5)} hoy={HOY} hijos={familia.hijos} />}
+  {pantalla === 'semana-con-eventos' && <Semana lunes={LUNES} hoy={HOY} dias={conEventos} hayTerapias hijos={conAvatares.hijos} />}
+  {pantalla === 'galeria-avatares' && <ElegirAvatar para="Personaje de Mora" nombre="Mora" actual="pulpo" hijoId="h1" esHijo />}
+  {pantalla === 'familia-con-avatares' && (
+    <>
+      <Inicio familia={conAvatares} />
+      <Avisos estado={estadoAvisos} vapidPublica="ejemplo" pasoForzado="activo" recordatorios />
+    </>
+  )}
   {pantalla === 'avisos-iphone' && <Avisos estado={estadoAvisos.map((a) => ({ ...a, activos: !a.soy_yo }))} vapidPublica="ejemplo" pasoForzado="iphone" />}
 </App>

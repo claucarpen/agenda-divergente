@@ -1,5 +1,5 @@
 ---
-status: aprobada
+status: implementada
 depends_on: [003]
 ---
 
@@ -213,3 +213,76 @@ celulares de la familia.
 | Eventos que se repiten cada año (cumples) | Cargar el mismo cumple cada año molesta |
 | Invitar a gente de afuera a un evento | La familia quiere compartir eventos con otros adultos |
 | Papeles y vencimientos | Es la spec 005 |
+
+## Evidencia de implementación (2026-11-19)
+
+Rama `spec/004-eventos-recordatorios-avatares`. Decisiones nuevas en `decisions.md` del 2026-11-19:
+`[avisos]` reloj con `pg_cron` (reemplaza la parte del cron diario de Vercel de `[avisos]`),
+`[avisos]` secreto en `config_privada`, `[avisos]` el reloj no borra suscripciones vencidas,
+`[datos]` avatares de galería cerrada y `[stack]` hora local en los recordatorios.
+
+### Desvíos de la spec
+
+- `tomar_recordatorios` devuelve las partes del texto (tipo, título, fecha, hora, lugar) y el texto lo
+  arma `avisoRecordatorio` en `textos-aviso.ts`, para que C4 lo pruebe con Vitest como los demás.
+- El secreto vive solo en `config_privada` (no en Vault): lo leen la función y el trabajo de
+  `pg_cron`; los tests usan el mismo esquema.
+- Un 404 o 410 en un recordatorio no borra la suscripción: eso exigiría una segunda función para
+  `anon`. La borra el próximo aviso inmediato.
+- Fecha pasada lanza `fecha_pasada` (y no `fecha_invalida`, que en la 002 significa "antes del inicio
+  de la terapia").
+
+### Paso 0
+
+Pasó antes de construir la aplicación: `tests/db/eventos-recordatorios.test.ts` ("paso 0") prueba
+que una segunda llamada con el mismo `ahora` devuelve vacío y que un secreto equivocado o vacío
+lanza `secreto_invalido`; `src/lib/recordatorios.test.ts` prueba el 401 sin header, con uno
+equivocado o sin `CRON_SECRET`, sin llamar a la base. En el proyecto real, `pg_cron` 1.6.4 y
+`pg_net` 0.20.4 figuran disponibles (sin instalar) y Vault está instalado. El primer intento falló
+la idempotencia: la limpieza comparaba contra `ahora` y no contra `now()` (`learnings/`).
+
+### `evals/run.sh`
+
+```
+PASS 001·C0 Postgres embebido + shim de Supabase
+PASS 001·C1 el proyecto compila
+PASS 001·C2 migración: 7 tablas con RLS, 8 funciones security definer, sin datos prohibidos
+PASS 001·C3 a 004·C3 reglas y seguridad en la base
+     |       Tests  82 passed (82)
+PASS 001·C4 a 004·C4 WhatsApp, fechas, avisos y recordatorios (Vitest)
+     |       Tests  24 passed (24)
+PASS 001·C5 a 004·C5 sin sesión, instalable y sin scroll horizontal (Playwright)
+     |   15 passed
+PASS 001·C6 la vista previa no llega a producción
+PASS 001·C7 sin secretos
+PASS 001·C8 (parte automática) contraste AA de todos los pares, claro y oscuro
+PASS 001·C9 README con las secciones del operador
+PASS 002·C2 migración: 5 tablas con RLS, 12 funciones security definer, sin datos prohibidos ni drops
+PASS 002·C9 README con la sección Migración 002
+PASS 003·C0 Web Push cifrado con VAPID hacia un servicio de push falso
+PASS 003·C2 migración: 2 tablas con RLS, 9 funciones security definer, destinatarios sin email
+PASS 003·C7 sin claves VAPID privadas en el repo ni en el navegador
+PASS 003·C9 README con Avisos y Migración 003
+PASS 004·C0 el reloj exige el secreto, no repite recordatorios y el endpoint responde 401 sin header
+PASS 004·C2 migración: 3 tablas con RLS, 7 funciones security definer, solo tomar_recordatorios para anon, sin archivos
+PASS 004·C7 el secreto del reloj no está en el repo y el SQL de pg_cron lo recibe como parámetro
+PASS 004·C9 README con Migración 004 y Recordatorios
+
+20 pasan, 0 fallan
+```
+
+C2 y C7 se probaron en negativo: con `evento_fecha` concedida a `anon` falla C2; con un archivo que
+lee `import.meta.env.CRON_SECRET` fuera del endpoint, o con `CRON_SECRET=<valor>`, falla C7.
+
+### C8 — rúbrica
+
+Capturas en `docs/capturas/004/` (4 pantallas a 375 y 1280 px, y a 375 px en modo oscuro).
+
+1. Cargar un cumple: "+ Agregar evento" en la semana → título, día (ya en el día de hoy o el lunes)
+   y hora → "Guardar evento". Un toque más los tres campos. ✓
+2. Evento con fecha: tarjeta blanca con borde terciario y etiqueta "Evento"; terapia: relleno
+   verde; evento semanal: relleno azul con borde izquierdo; todo el día: franja azul oscura arriba
+   del día. ✓
+3. Los 12 personajes se distinguen a 40 px (galería renderizada a 96 y 40 px) y son originales del
+   proyecto. ✓
+4. Mismos tokens; contraste AA de los 5 pares nuevos en claro y oscuro; botones de 48 px. ✓

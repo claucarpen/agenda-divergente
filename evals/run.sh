@@ -44,19 +44,19 @@ c2_migracion() {
 
 c3_base() {
   local out
-  if out=$(npm run -s test:db 2>&1); then ok "001·C3 + 002·C3 + 003·C3 reglas y seguridad en la base"; ev "$(printf '%s' "$out" | grep -E 'Tests ')"
+  if out=$(npm run -s test:db 2>&1); then ok "001·C3 a 004·C3 reglas y seguridad en la base"; ev "$(printf '%s' "$out" | grep -E 'Tests ')"
   else ko "001·C3 reglas y seguridad en la base"; ev "$(printf '%s' "$out" | grep -E 'FAIL|Error|Tests ' | head -8)"; fi
 }
 
 c4_whatsapp() {
   local out
-  if out=$(npm test 2>&1); then ok "001·C4 + 002·C4 + 003·C4 WhatsApp, fechas y avisos (Vitest)"; ev "$(printf '%s' "$out" | grep -E 'Tests ')"
+  if out=$(npm test 2>&1); then ok "001·C4 a 004·C4 WhatsApp, fechas, avisos y recordatorios (Vitest)"; ev "$(printf '%s' "$out" | grep -E 'Tests ')"
   else ko "001·C4 Vitest"; ev "$(printf '%s' "$out" | tail -8)"; fi
 }
 
 c5_sin_sesion() {
   local out
-  if out=$(npx playwright test --config playwright.app.config.ts 2>&1); then ok "001·C5 + 002·C5 + 003·C5 sin sesión, instalable y sin scroll horizontal (Playwright)"; ev "$(printf '%s' "$out" | grep -E 'passed')"
+  if out=$(npx playwright test --config playwright.app.config.ts 2>&1); then ok "001·C5 a 004·C5 sin sesión, instalable y sin scroll horizontal (Playwright)"; ev "$(printf '%s' "$out" | grep -E 'passed')"
   else ko "001·C5 páginas sin sesión"; ev "$(printf '%s' "$out" | tail -8)"; fi
 }
 
@@ -155,6 +155,51 @@ c9_003_readme() {
   if [ -z "$miss" ]; then ok "003·C9 README con Avisos y Migración 003"; else ko "003·C9 faltan secciones:$miss"; fi
 }
 
+# --- Spec 004: eventos con fecha, recordatorios y avatares ------------------------------------------
+
+MIG4=supabase/migrations/004_eventos_recordatorios_avatares.sql
+
+c0_004_reloj() {
+  local out
+  if out=$(npx vitest run --config vitest.db.config.ts tests/db/eventos-recordatorios.test.ts -t 'paso 0' 2>&1 && npx vitest run src/lib/recordatorios.test.ts -t 'se defiende' 2>&1); then
+    ok "004·C0 el reloj exige el secreto, no repite recordatorios y el endpoint responde 401 sin header"
+  else ko "004·C0 reloj"; ev "$(printf '%s' "$out" | grep -E 'FAIL|Error|Tests ' | head -6)"; fi
+}
+
+c2_004_migracion() {
+  [ -f "$MIG4" ] || { ko "004·C2 falta $MIG4"; return; }
+  local flat miss="" t f anon
+  flat=$(tr '\n' ' ' < "$MIG4" | tr -s ' ' | tr 'A-Z' 'a-z')
+  for t in eventos_fecha recordatorios_enviados config_privada; do
+    printf '%s' "$flat" | grep -q "create table public.$t (" || miss="$miss tabla:$t"
+    printf '%s' "$flat" | grep -q "alter table public.$t enable row level security" || miss="$miss rls:$t"
+  done
+  for f in agregar_evento_fecha editar_evento_fecha borrar_evento_fecha elegir_avatar elegir_avatar_hijo cambiar_recordatorios tomar_recordatorios; do
+    printf '%s' "$flat" | grep -qE "create function public\.$f\([^;]*security definer set search_path = ''" || miss="$miss funcion:$f"
+  done
+  printf '%s' "$flat" | grep -qE "grant [a-z, ]+ on [^;]*config_privada" && miss="$miss grant-config_privada"
+  anon=$(grep -E '^grant execute .* to (anon|anon, authenticated);' "$MIG4" | grep -v 'invitacion_publica' | grep -oE 'public\.[a-z_]+')
+  [ "$anon" = "public.tomar_recordatorios" ] || miss="$miss anon:[$anon]"
+  printf '%s' "$flat" | grep -qE "create policy [^;]* for (insert|update|delete|all) [^;]*to authenticated" && miss="$miss policy-escritura"
+  grep -qiE 'drop (table|schema)' "$MIG4" && miss="$miss drop"
+  grep -qiE 'bytea|_url|foto|imagen|storage\.' "$MIG4" && miss="$miss archivo-o-imagen"
+  if [ -z "$miss" ]; then ok "004·C2 migración: 3 tablas con RLS, 7 funciones security definer, solo tomar_recordatorios para anon, sin archivos"; else ko "004·C2 migración:$miss"; fi
+}
+
+c7_004_cron() {
+  local miss=""
+  grep -rqE 'CRON_SECRET *= *[A-Za-z0-9_-]{8,}' . --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.vercel 2>/dev/null && miss="$miss secreto-con-valor"
+  grep -q ":'secreto'" supabase/cron/recordatorios.sql 2>/dev/null || miss="$miss cron-sin-parametro"
+  for f in $(grep -rlE 'env\.CRON_SECRET' src 2>/dev/null); do case "$f" in src/pages/api/recordatorios.ts|src/env.d.ts) ;; *) miss="$miss leida-en:$f" ;; esac; done
+  if [ -z "$miss" ]; then ok "004·C7 el secreto del reloj no está en el repo y el SQL de pg_cron lo recibe como parámetro"; else ko "004·C7 secreto del reloj:$miss"; fi
+}
+
+c9_004_readme() {
+  local miss="" s
+  for s in 'Migración 004' 'Recordatorios (reloj de Supabase)'; do grep -qF "## $s" README.md || miss="$miss [$s]"; done
+  if [ -z "$miss" ]; then ok "004·C9 README con Migración 004 y Recordatorios"; else ko "004·C9 faltan secciones:$miss"; fi
+}
+
 c0_paso0
 c1_build
 c2_migracion
@@ -171,6 +216,10 @@ c0_003_push
 c2_003_migracion
 c7_003_vapid
 c9_003_readme
+c0_004_reloj
+c2_004_migracion
+c7_004_cron
+c9_004_readme
 
 printf '\n%d pasan, %d fallan\n' "$passed" "$failed"
 [ "$failed" -eq 0 ]

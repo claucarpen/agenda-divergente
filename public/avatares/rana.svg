@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Rana">
+<title>Rana</title>
+<circle cx="48" cy="48" r="48" fill="#e6f6d0"/>
+<g><circle cx="32" cy="32" r="12" fill="#5fb85a"/><circle cx="64" cy="32" r="12" fill="#5fb85a"/><circle cx="32" cy="32" r="8" fill="#fff"/><circle cx="64" cy="32" r="8" fill="#fff"/><ellipse cx="48" cy="58" rx="32" ry="22" fill="#6cc867"/><circle cx="32" cy="32" r="4.4" fill="#1f2a28"/><circle cx="33.54" cy="30.24" r="1.54" fill="#fff"/><circle cx="64" cy="32" r="4.4" fill="#1f2a28"/><circle cx="65.54" cy="30.24" r="1.54" fill="#fff"/><ellipse cx="26" cy="58" rx="5" ry="3.2" fill="#ff8f8f" opacity=".55"/><ellipse cx="70" cy="58" rx="5" ry="3.2" fill="#ff8f8f" opacity=".55"/><path d="M30 60 q18 14 36 0" fill="none" stroke="#1f2a28" stroke-width="2.6" stroke-linecap="round"/><circle cx="40" cy="48" r="1.6" fill="#3f8f3b"/><circle cx="56" cy="48" r="1.6" fill="#3f8f3b"/></g>
+</svg>

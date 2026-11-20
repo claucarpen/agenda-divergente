@@ -1,0 +1,44 @@
+---
+// Elegir personaje (spec 004): `/avatar` para quien usa la app, `/avatar?hijo=<uuid>` para un hijo.
+import App from '../layouts/App.astro';
+import ElegirAvatar from '../components/ElegirAvatar.astro';
+import { esAvatar } from '../lib/avatares';
+import { textoDeError } from '../lib/errores';
+import { campo, exigirFamilia } from '../lib/sesion';
+
+export const prerender = false;
+
+const ctx = await exigirFamilia(Astro);
+if (!ctx.ok) return ctx.respuesta;
+const { supabase, familia } = ctx;
+
+const hijoId = Astro.url.searchParams.get('hijo');
+const hijo = hijoId ? familia.hijos.find((h) => h.id === hijoId) ?? null : null;
+const yo = familia.adultos.find((a) => a.soy_yo);
+let error: string | null = null;
+
+if (hijoId && !hijo) {
+  Astro.response.status = 404;
+} else if (Astro.request.method === 'POST') {
+  const f = await Astro.request.formData();
+  const avatar = f.get('accion') === 'inicial' ? null : campo(f, 'avatar');
+  if (avatar !== null && !esAvatar(avatar)) {
+    error = textoDeError({ message: 'avatar_invalido' });
+  } else {
+    const r = hijo
+      ? await supabase.rpc('elegir_avatar_hijo', { hijo_id: hijo.id, avatar })
+      : await supabase.rpc('elegir_avatar', { avatar });
+    if (!r.error) return Astro.redirect('/familia', 303);
+    error = textoDeError(r.error);
+  }
+}
+---
+<App titulo="Personaje" conSesion seccion="familia">
+  {hijoId && !hijo ? (
+    <section class="tarjeta"><h1 class="titulo">No encontramos a ese hijo</h1><a class="boton boton-contorno" href="/familia">Ir a la familia</a></section>
+  ) : hijo ? (
+    <ElegirAvatar para={`Personaje de ${hijo.nombre}`} nombre={hijo.nombre} actual={hijo.avatar ?? null} hijoId={hijo.id} esHijo error={error} />
+  ) : (
+    <ElegirAvatar para="Tu personaje" nombre={yo?.nombre ?? '?'} actual={yo?.avatar ?? null} hijoId={null} esHijo={false} error={error} />
+  )}
+</App>

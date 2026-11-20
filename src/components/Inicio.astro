@@ -3,12 +3,12 @@
 import type { Familia } from '../lib/familia';
 import { MAX_ADULTOS, OBRAS_SOCIALES } from '../lib/familia';
 import { linkInvitacion } from '../lib/whatsapp';
+import Avatar from './Avatar.astro';
 
 interface Props { familia: Familia; invitacionUrl?: string | null; error?: string | null }
 const { familia, invitacionUrl = null, error = null } = Astro.props;
 const yo = familia.adultos.find((a) => a.soy_yo);
 const lleno = familia.adultos.length >= MAX_ADULTOS;
-const inicial = (s: string) => s.trim().charAt(0).toUpperCase();
 const sinHijos = familia.hijos.length === 0;
 ---
 <section>
@@ -26,8 +26,11 @@ const sinHijos = familia.hijos.length === 0;
   <ul class="lista">
     {familia.adultos.map((a) => (
       <li class="item">
-        <span class="avatar" aria-hidden="true">{inicial(a.nombre)}</span>
+        {a.soy_yo ? (
+          <a class="avatar-boton" href="/avatar" aria-label="Elegir tu personaje"><Avatar avatar={a.avatar} nombre={a.nombre} /></a>
+        ) : <Avatar avatar={a.avatar} nombre={a.nombre} />}
         <span class="item-texto"><strong>{a.nombre}</strong>{a.soy_yo && <span class="apoyo">Vos</span>}</span>
+        {a.soy_yo && <a class="boton boton-texto item-acciones" href="/avatar">Personaje</a>}
       </li>
     ))}
   </ul>
@@ -58,8 +61,9 @@ const sinHijos = familia.hijos.length === 0;
     <ul class="lista">
       {familia.hijos.map((h) => (
         <li class="item">
-          <span class="avatar avatar-hijo" aria-hidden="true">{inicial(h.nombre)}</span>
+          <a class="avatar-boton" href={`/avatar?hijo=${h.id}`} aria-label={`Elegir el personaje de ${h.nombre}`}><Avatar avatar={h.avatar} nombre={h.nombre} hijo /></a>
           <span class="item-texto"><strong>{h.nombre}</strong><span class="apoyo">{h.obra_social}{h.plan ? ` · Plan ${h.plan}` : ''}</span></span>
+          <a class="boton boton-texto item-acciones" href={`/avatar?hijo=${h.id}`}>Personaje</a>
         </li>
       ))}
     </ul>

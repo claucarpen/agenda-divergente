@@ -1,0 +1,40 @@
+---
+// Galería de personajes (spec 004): para quien usa la app o para un hijo de la familia.
+import { AVATARES, urlAvatar } from '../lib/avatares';
+import Avatar from './Avatar.astro';
+
+interface Props { para: string; nombre: string; actual: string | null; hijoId: string | null; esHijo: boolean; error?: string | null }
+const { para, nombre, actual, hijoId, esHijo, error = null } = Astro.props;
+---
+<section>
+  <a class="boton boton-texto" href="/familia">← Familia</a>
+  <div class="cabeza-hijos">
+    <Avatar avatar={actual} nombre={nombre} hijo={esHijo} tam={56} />
+    <h1 class="titular">{para}</h1>
+  </div>
+  <p class="apoyo">Elegí un personaje. Lo van a ver todos los adultos de la familia.</p>
+</section>
+
+{error && <p class="aviso" role="alert">{error}</p>}
+
+<form method="post" class="tarjeta">
+  {hijoId && <input type="hidden" name="hijo_id" value={hijoId} />}
+  <fieldset class="galeria">
+    <legend class="subtitulo" style="margin-bottom:12px">Personajes</legend>
+    {AVATARES.map((a) => (
+      <label class="galeria-opcion">
+        <input type="radio" name="avatar" value={a.id} checked={a.id === actual} required />
+        <img src={urlAvatar(a.id)} alt="" width="72" height="72" />
+        {a.nombre}
+      </label>
+    ))}
+  </fieldset>
+  <button class="boton boton-relleno boton-ancho" type="submit" name="accion" value="elegir">Guardar</button>
+</form>
+
+{actual && (
+  <form method="post">
+    {hijoId && <input type="hidden" name="hijo_id" value={hijoId} />}
+    <button class="boton boton-contorno boton-ancho" type="submit" name="accion" value="inicial">Usar la inicial</button>
+  </form>
+)}

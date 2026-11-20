@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Ballena">
+<title>Ballena</title>
+<circle cx="48" cy="48" r="48" fill="#d6ecff"/>
+<g><path d="M48 20 q-4 -8 -10 -6 M48 20 q4 -8 10 -6 M48 20 v-8" fill="none" stroke="#7cc4ff" stroke-width="3" stroke-linecap="round"/><path d="M14 56 C14 32 78 28 80 52 C82 66 70 78 48 78 C26 78 14 70 14 56 Z" fill="#4a9be0"/><path d="M78 54 L90 44 L88 62 Z" fill="#4a9be0"/><path d="M22 62 C30 72 64 74 76 62 C72 74 60 78 48 78 C34 78 24 72 22 62 Z" fill="#cfe8ff"/><circle cx="36" cy="48" r="4.2" fill="#1f2a28"/><circle cx="37.47" cy="46.32" r="1.47" fill="#fff"/><circle cx="56" cy="48" r="4.2" fill="#1f2a28"/><circle cx="57.47" cy="46.32" r="1.47" fill="#fff"/><ellipse cx="31" cy="57" rx="5" ry="3.2" fill="#ff8f8f" opacity=".55"/><ellipse cx="61" cy="57" rx="5" ry="3.2" fill="#ff8f8f" opacity=".55"/><path d="M42 58 q4 4.8 8 0" fill="none" stroke="#1f2a28" stroke-width="2.6" stroke-linecap="round"/></g>
+</svg>
