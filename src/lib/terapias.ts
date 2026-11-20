@@ -29,7 +29,13 @@ export type Turno = {
   terapia: Terapia; cambio: Cambio | null;
 };
 export type OcurrenciaEvento = { clase: 'evento'; evento_id: string; inicio: string; titulo: string; hijo: string | null };
-export type Dia = { fecha: string; ocurrencias: (OcurrenciaTerapia | OcurrenciaEvento)[] };
+// Spec 004: eventos con fecha propia (`hora` null = todo el día).
+export type EventoFecha = {
+  id: string; titulo: string; fecha: string; hora: string | null; todo_el_dia: boolean; nota: string | null;
+  hijo_id: string | null; hijo: string | null; quien: string | null; quien_avatar: string | null;
+};
+export type OcurrenciaEventoFecha = EventoFecha & { clase: 'evento_fecha'; evento_id: string; inicio: string };
+export type Dia = { fecha: string; todo_el_dia?: (EventoFecha & { clase: 'evento_fecha' })[]; ocurrencias: (OcurrenciaTerapia | OcurrenciaEvento | OcurrenciaEventoFecha)[] };
 
 export type Modalidad = 'consultorio' | 'domicilio' | 'colegio' | 'virtual';
 export const MODALIDADES: { id: Modalidad; nombre: string }[] = [

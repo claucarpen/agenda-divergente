@@ -13,7 +13,8 @@ repo es el cuerpo: specs, decisiones y lo construido. Cómo se trabaja acá: `CL
 | 001 | Espacio de familia: los dos padres entran con Google, uno invita al otro, cargan al hijo |
 | 002 | Terapias y horarios recurrentes; la semana a la vista |
 | 003 | Cambios de turno (una vez o por período), web app instalable y avisos push |
-| 004 | Papeles y vencimientos, con el cron diario de alertas |
+| 004 | Eventos con fecha (cumples, actos), recordatorios 10 minutos antes y la noche anterior, avatares ilustrados |
+| 005 | Papeles y vencimientos |
 
 Cada una se escribe y se aprueba antes de construirla (Gate 1).
 
@@ -70,3 +71,18 @@ Si cambiás las claves, todos los celulares tienen que volver a activar los avis
 ## Migración 003
 
 Después de la 002, en Supabase → SQL Editor, pegar y correr completo `supabase/migrations/003_cambios.sql`. Crea los cambios de turno y las suscripciones de avisos, y actualiza la función de la semana para que muestre los cambios. Se corre una sola vez.
+
+## Migración 004
+
+Después de la 003, en Supabase → SQL Editor, pegar y correr completo `supabase/migrations/004_eventos_recordatorios_avatares.sql`. Crea los eventos con fecha, los avatares y lo que usan los recordatorios, y actualiza la semana para mostrar los eventos. Se corre una sola vez.
+
+## Recordatorios (reloj de Supabase)
+
+Los recordatorios (10 minutos antes de cada turno o evento, y a las 20:00 de la noche anterior a cada evento con fecha) los dispara un trabajo de `pg_cron` de Supabase que llama cada minuto a `/api/recordatorios`. Una sola vez, después de la Migración 004:
+
+1. Generar un secreto: `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`. **Es secreto**: nunca va en el código ni en un mensaje.
+2. En Vercel → el proyecto → Settings → Environment Variables: `CRON_SECRET` = el secreto (marcado *Sensitive*). Volver a desplegar.
+3. En Supabase → SQL Editor: pegar `supabase/cron/recordatorios.sql`, reemplazar `:'secreto'` por el secreto y `:'url'` por `'https://agenda-divergente.vercel.app'` (entre comillas simples) y correrlo. Habilita `pg_cron` y `pg_net` y crea el trabajo `recordatorios`.
+4. Comprobar: en Supabase → Integrations → Cron, el trabajo `recordatorios` corre cada minuto con estado *succeeded*.
+
+Para rotar el secreto: cambiar `CRON_SECRET` en Vercel, desplegar y volver a correr el paso 3. Cada adulto puede apagar sus recordatorios en Familia → Avisos.

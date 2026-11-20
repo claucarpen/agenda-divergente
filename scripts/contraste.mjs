@@ -29,6 +29,11 @@ const PARES = [
   ['on-primary', 'primary', 'etiqueta "Cambiado" (spec 003)'],
   ['on-error-container', 'error-container', 'etiqueta "No hay" (spec 003)'],
   ['on-primary-container', 'primary-container', 'mensaje de aviso de prueba enviado (spec 003)'],
+  ['on-surface', 'surface', 'evento con fecha en la semana (spec 004)'],
+  ['on-tertiary-container', 'tertiary-container', 'etiqueta "Evento" (spec 004)'],
+  ['on-tertiary', 'tertiary', 'franja de evento de todo el día (spec 004)'],
+  ['on-secondary-container', 'secondary-container', 'personaje elegido en la galería (spec 004)'],
+  ['on-surface-variant', 'surface', 'nombre de personaje en la galería (spec 004)'],
 ];
 let falla = false;
 for (const [nombre, t] of [['claro', leer(claro)], ['oscuro', leer(oscuro)]]) {

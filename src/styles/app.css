@@ -279,3 +279,26 @@ body.con-navegacion .contenido { padding-bottom: 24px; }
 .punto.activo { background: var(--md-primary); }
 [hidden] { display: none !important; }
 .aviso-ok { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+
+/* Avatares, eventos con fecha y recordatorios (spec 004) */
+.avatar-img { object-fit: cover; background: transparent; padding: 0; }
+.avatar-boton { display: inline-grid; border-radius: 50%; flex: none; }
+.avatar-boton:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+.galeria { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; border: 0; }
+@media (min-width: 480px) { .galeria { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.galeria-opcion { position: relative; display: grid; justify-items: center; gap: 6px; padding: 12px 4px; border-radius: 20px; background: var(--md-surface); cursor: pointer; font-size: 0.875rem; font-weight: 600; color: var(--md-on-surface-variant); }
+.galeria-opcion input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.galeria-opcion img { width: 72px; height: 72px; }
+.galeria-opcion:has(input:checked) { background: var(--md-secondary-container); color: var(--md-on-secondary-container); outline: 3px solid var(--md-primary); }
+.galeria-opcion:has(input:focus-visible) { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+.cabeza-hijos { display: flex; align-items: center; gap: 8px; }
+.semana-acciones { display: flex; justify-content: flex-end; }
+.franja-dia {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px;
+  background: var(--md-tertiary); color: var(--md-on-tertiary); text-decoration: none; font-weight: 650;
+}
+.franja-dia span { font-weight: 500; font-size: 0.875rem; }
+.ocurrencia-fecha { background: var(--md-surface); color: var(--md-on-surface); border: 2px solid var(--md-tertiary); padding: 12px 14px; }
+.ocurrencia-fecha .etiqueta { background: var(--md-tertiary-container); color: var(--md-on-tertiary-container); }
+.interruptor { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; }
+.interruptor-texto { display: grid; }

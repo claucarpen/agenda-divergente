@@ -32,6 +32,9 @@ const TEXTOS: Record<string, string> = {
   periodo_largo: 'El período puede durar hasta 180 días.',
   cambio_superpuesto: 'Ese turno ya tiene un cambio en esas fechas. Deshacelo primero.',
   suscripcion_invalida: 'No pudimos activar los avisos en este celular.',
+  fecha_pasada: 'Revisá la fecha: no puede ser anterior a hoy.',
+  avatar_invalido: 'Elegí un personaje de la galería.',
+  valor_invalido: 'Algo no se entendió. Probá de nuevo.',
 };
 
 export const ERROR_GENERICO = 'Algo falló. Probá de nuevo en un rato.';

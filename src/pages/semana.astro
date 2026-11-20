@@ -10,7 +10,7 @@ export const prerender = false;
 
 const ctx = await exigirFamilia(Astro);
 if (!ctx.ok) return ctx.respuesta;
-const { supabase } = ctx;
+const { supabase, familia } = ctx;
 
 const hoy = hoyEnArgentina();
 const pedido = Astro.url.searchParams.get('desde');
@@ -33,6 +33,6 @@ const hayTerapias = ((m.data?.terapias ?? []) as unknown[]).length > 0;
       <p class="apoyo">No pudimos cargar la semana. Probá de nuevo en un rato.</p>
     </section>
   ) : (
-    <Semana lunes={lunes} hoy={hoy} dias={dias} hayTerapias={hayTerapias} />
+    <Semana lunes={lunes} hoy={hoy} dias={dias} hayTerapias={hayTerapias} hijos={familia.hijos} />
   )}
 </App>

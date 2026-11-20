@@ -87,3 +87,34 @@
 **Qué se decide**: `tests/push/push.test.ts` genera un certificado para 127.0.0.1 con openssl y el cliente de `web-push` confía solo en ese certificado (`agent` con `ca`). Nunca se desactiva la verificación TLS.
 **Por qué**: `web-push` 4 solo habla HTTPS; un certificado propio del test prueba el envío real sin servicios externos ni claves reales.
 **La invalidaría**: una máquina sin openssl (macOS y Linux lo traen).
+
+## 2026-11-19 · [avisos] Los recordatorios los dispara pg_cron de Supabase cada minuto, sin clave de servicio
+
+**Qué se decide**: un trabajo de `pg_cron` llama cada minuto con `pg_net` a `/api/recordatorios` con `Authorization: Bearer <secreto>`. El endpoint llama a `tomar_recordatorios(secreto)` con la clave publicable; esa función es la única con `execute` para `anon` y compara el secreto con `config_privada`.
+**Por qué**: el recordatorio de 10 minutos necesita un reloj de un minuto. El cron de Vercel Hobby es diario, Vercel Pro cuesta USD 20 por mes y un servicio externo suma una cuenta. `pg_cron` y `pg_net` vienen con Supabase. Con el secreto compartido, ninguna clave de servicio de Supabase llega a Vercel.
+**Reemplaza a**: la parte "programados (vencimientos, cron diario de Vercel)" de `2026-11-18 · [avisos]`; el canal sigue siendo Web Push.
+**La invalidaría**: que Supabase quite `pg_cron` o `pg_net` del plan gratis, o que la app pase a un plan de Vercel con cron por minuto.
+
+## 2026-11-19 · [avisos] El secreto del reloj vive en `config_privada`, no en Vault
+
+**Qué se decide**: el secreto del reloj y la URL de la app se guardan en `public.config_privada`, sin `grant` para `anon` ni `authenticated`. Lo leen `tomar_recordatorios` y el trabajo de `pg_cron`.
+**Por qué**: un solo lugar para las dos lecturas, y el mismo esquema funciona en el Postgres embebido de los tests, que no tiene Vault. Sin `grant` y con RLS, solo `postgres` y las funciones `security definer` lo leen.
+**La invalidaría**: guardar un secreto que dé acceso a algo más que pedir recordatorios.
+
+## 2026-11-19 · [avisos] El reloj no borra suscripciones vencidas
+
+**Qué se decide**: si un recordatorio recibe 404 o 410, el endpoint solo lo cuenta. La suscripción la borra el próximo aviso inmediato de esa familia (`marcar_suscripcion`, spec 003).
+**Por qué**: borrar sin sesión exige otra función para `anon`. Una suscripción vencida solo cuesta un envío fallido por recordatorio.
+**La invalidaría**: que los envíos fallidos se acumulen hasta afectar el tiempo del endpoint.
+
+## 2026-11-19 · [datos] Avatares ilustrados de una galería cerrada, sin fotos
+
+**Qué se decide**: `perfiles.avatar` e `hijos.avatar` guardan el id de uno de 13 personajes propios (`public/avatares/`), con `check` contra la lista. Ningún archivo ni URL de imagen.
+**Por qué**: la familia quería personalizar sin subir fotos de una menor; la regla `2026-11-18 · [datos]` no cambia. Los personajes son originales del proyecto, no de terceros.
+**La invalidaría**: una decisión del operador de permitir fotos reales, con almacenamiento privado y sin metadatos.
+
+## 2026-11-19 · [stack] La hora de los recordatorios se calcula en hora local de Buenos Aires
+
+**Qué se decide**: `tomar_recordatorios` pasa `ahora` a `timestamp` local con `at time zone 'America/Argentina/Buenos_Aires'` y lo compara con `fecha + hora` de cada turno o evento. Ventana: `(ahora, ahora + 10 min]`; la clave de `recordatorios_enviados` evita repetir.
+**Por qué**: los horarios se guardan como hora local sin zona (spec 002). La ventana de 10 minutos tolera que el reloj se saltee un minuto sin mandar dos veces.
+**La invalidaría**: familias en otra zona horaria.

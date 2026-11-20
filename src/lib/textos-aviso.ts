@@ -57,3 +57,29 @@ export function avisoEvento(titulo: string, dia: number, hora: string, agregado:
 export function avisoPrueba(): Aviso {
   return { titulo: 'Avisos activos', cuerpo: 'Así te van a llegar los cambios de la semana.', url: '/familia' };
 }
+
+// Eventos con fecha y recordatorios (spec 004). El título del evento lo escribe la familia y viaja;
+// la nota nunca.
+export type EventoFecha = { titulo: string; fecha: string; hora: string | null };
+const cuandoEvento = (e: EventoFecha) => (e.hora ? `${fechaAviso(e.fecha)} ${e.hora}` : `${fechaAviso(e.fecha)}, todo el día`);
+
+export function avisoEventoFechaNuevo(e: EventoFecha, quien: string): Aviso {
+  return { titulo: 'Nuevo evento', cuerpo: `${e.titulo}: ${cuandoEvento(e)}. Lo agregó ${quien}`, url: semanaDe(e.fecha) };
+}
+
+export function avisoEventoFechaCambio(previo: EventoFecha, nuevo: EventoFecha, quien: string): Aviso {
+  const cuando = cuandoEvento(previo) === cuandoEvento(nuevo) ? cuandoEvento(nuevo) : `${cuandoEvento(previo)} → ${cuandoEvento(nuevo)}`;
+  return { titulo: TITULO, cuerpo: `${nuevo.titulo}: ${cuando}. ${firma(quien)}`, url: semanaDe(nuevo.fecha) };
+}
+
+export function avisoEventoFechaBorrado(e: EventoFecha, quien: string): Aviso {
+  return { titulo: TITULO, cuerpo: `${e.titulo} (${cuandoEvento(e)}) se quitó. Lo quitó ${quien}`, url: semanaDe(e.fecha) };
+}
+
+export type Recordatorio = { tipo: 'diez' | 'manana'; titulo: string; fecha: string; hora: string | null; lugar: string | null };
+
+export function avisoRecordatorio(r: Recordatorio): Aviso {
+  const cuando = r.hora ?? 'todo el día';
+  const lugar = r.tipo === 'diez' && r.lugar ? ` · ${r.lugar}` : '';
+  return { titulo: r.tipo === 'diez' ? 'En 10 minutos' : 'Mañana', cuerpo: `${r.titulo}, ${cuando}${lugar}`, url: semanaDe(r.fecha) };
+}

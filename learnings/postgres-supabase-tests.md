@@ -9,3 +9,5 @@
 - Un voto suma como mucho 1 a cada opción: dos opciones solo llegan juntas al quórum empatadas. El caso "llegan juntas con distintos votos" solo se prueba sembrando el estado directo en la base.
 - `pkill -f <patrón>` desde un shell cuyo comando contiene el patrón se mata a sí mismo: filtrar por `comm` (`ps -eo pid,comm,args`).
 - Como root (contenedores), `embedded-postgres` no arranca: `createPostgresUser: true` y la carpeta temporal con permiso 755 para el usuario `postgres`.
+- Una función que recibe `ahora` como parámetro (para probar horarios) tiene que usar `now()` en lo que depende del reloj real, como limpiar filas viejas con `enviado_en default now()`: comparar contra el `ahora` del test (una fecha futura) borró lo recién insertado y rompió la idempotencia de `tomar_recordatorios`.
+- Un trabajo de `pg_cron` que lee su configuración de una tabla al correr (secreto, URL) evita reescribir el `cron.schedule` para rotar el secreto, y deja el SQL del trabajo sin valores.

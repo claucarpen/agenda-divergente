@@ -1,0 +1,81 @@
+---
+// `/evento` (spec 004): agregar un evento con fecha propia, o editarlo y borrarlo.
+import type { Hijo } from '../lib/familia';
+import { lunesDe, nombreDia } from '../lib/fechas';
+import type { EventoFecha } from '../lib/terapias';
+import Avatar from './Avatar.astro';
+
+interface Props { evento: EventoFecha | null; fecha: string; hoy: string; hijos: Hijo[]; error?: string | null; valores?: Record<string, string | null> }
+const { evento, fecha, hoy, hijos, error = null, valores = {} } = Astro.props;
+const v = (k: string, porDefecto: string | null) => (k in valores ? valores[k] : porDefecto) ?? '';
+const todoElDia = 'todo_el_dia' in valores ? valores.todo_el_dia === '1' : evento ? evento.todo_el_dia : false;
+const fechaValor = v('fecha', evento?.fecha ?? fecha);
+const volver = `/semana?desde=${lunesDe(evento?.fecha ?? fecha)}`;
+---
+<section>
+  <a class="boton boton-texto" href={volver}>← Semana</a>
+  <h1 class="titular">{evento ? evento.titulo : 'Nuevo evento'}</h1>
+  {evento ? (
+    <p class="apoyo">{nombreDia(evento.fecha)} · {evento.hora ?? 'Todo el día'}</p>
+  ) : (
+    <p class="apoyo">Cumples, actos, salidas: lo que no es terapia, en la misma semana.</p>
+  )}
+  {evento?.quien && (
+    <p class="apoyo chico cabeza-hijos"><Avatar avatar={evento.quien_avatar} nombre={evento.quien} tam={24} /> Lo agregó {evento.quien}</p>
+  )}
+</section>
+
+{error && <p class="aviso" role="alert">{error}</p>}
+
+<form method="post" class="tarjeta">
+  <input type="hidden" name="accion" value="guardar" />
+  <div class="campo">
+    <label for="e-titulo">Qué es</label>
+    <input id="e-titulo" name="titulo" required maxlength="60" autocomplete="off" placeholder="Cumple de Sofi" value={v('titulo', evento?.titulo ?? null)} />
+  </div>
+  <div class="fila-campos">
+    <div class="campo">
+      <label for="e-fecha">Día</label>
+      <input id="e-fecha" name="fecha" type="date" min={hoy} required value={fechaValor} />
+    </div>
+    <div class="campo">
+      <label for="e-hora">Hora</label>
+      <input id="e-hora" name="hora" type="time" value={v('hora', evento?.hora ?? null)} required={!todoElDia} disabled={todoElDia} />
+    </div>
+  </div>
+  <label class="casilla">
+    <input type="checkbox" name="todo_el_dia" value="1" checked={todoElDia} data-todo-el-dia />
+    Todo el día, sin hora
+  </label>
+  <div class="campo">
+    <label for="e-para">Para quién</label>
+    <select id="e-para" name="hijo_id">
+      <option value="">Toda la familia</option>
+      {hijos.map((h) => <option value={h.id} selected={v('hijo_id', evento?.hijo_id ?? null) === h.id}>{h.nombre}</option>)}
+    </select>
+  </div>
+  <div class="campo">
+    <label for="e-nota">Nota (opcional)</label>
+    <input id="e-nota" name="nota" maxlength="80" autocomplete="off" placeholder="Salón Pelotero, Av. Rivadavia 1234" value={v('nota', evento?.nota ?? null)} />
+    <p class="ayuda">Hasta 80 caracteres. No pongas datos de salud.</p>
+  </div>
+  <button class="boton boton-relleno boton-ancho" type="submit">{evento ? 'Guardar cambios' : 'Guardar evento'}</button>
+  <p class="ayuda">Les llega un aviso a todos los adultos, y un recordatorio la noche anterior{todoElDia ? '' : ' y 10 minutos antes'}.</p>
+</form>
+
+{evento && (
+  <form method="post">
+    <input type="hidden" name="accion" value="borrar" />
+    <button class="boton boton-contorno boton-ancho" type="submit">Borrar evento</button>
+  </form>
+)}
+
+<script>
+  const casilla = document.querySelector<HTMLInputElement>('[data-todo-el-dia]');
+  const hora = document.querySelector<HTMLInputElement>('#e-hora');
+  casilla?.addEventListener('change', () => {
+    if (!hora) return;
+    hora.disabled = casilla.checked;
+    hora.required = !casilla.checked;
+  });
+</script>

@@ -3,12 +3,21 @@
 // El estado del celular lo decide el script: soporte, iPhone sin instalar, permiso y suscripción.
 type Estado = { nombre: string; soy_yo: boolean; activos: boolean };
 // `pasoForzado`: solo para la vista previa de diseño, muestra un paso sin revisar el celular.
-interface Props { estado: Estado[]; vapidPublica: string | null; mensaje?: string | null; pasoForzado?: string }
-const { estado, vapidPublica, mensaje = null, pasoForzado } = Astro.props;
+interface Props { estado: Estado[]; vapidPublica: string | null; mensaje?: string | null; pasoForzado?: string; recordatorios?: boolean }
+const { estado, vapidPublica, mensaje = null, pasoForzado, recordatorios = true } = Astro.props;
 ---
 <section class="tarjeta" aria-labelledby="t-avisos" id="avisos" data-vapid={vapidPublica ?? ''} data-forzar={pasoForzado}>
   <h2 class="titulo" id="t-avisos">Avisos</h2>
   <p class="apoyo chico">Cuando alguien cambia un turno, un horario o un evento, a todos los adultos de la familia les llega un aviso al celular.</p>
+  <form method="post" class="interruptor">
+    <input type="hidden" name="accion" value="recordatorios" />
+    <input type="hidden" name="activos" value={recordatorios ? '0' : '1'} />
+    <span class="interruptor-texto">
+      <strong>Tus recordatorios: {recordatorios ? 'prendidos' : 'apagados'}</strong>
+      <span class="apoyo chico">10 minutos antes de cada terapia o evento, y la noche anterior a cada evento.</span>
+    </span>
+    <button class:list={['boton', recordatorios ? 'boton-contorno' : 'boton-relleno']} type="submit">{recordatorios ? 'Apagar' : 'Prender'}</button>
+  </form>
   {mensaje && <p class="aviso aviso-ok" role="status">{mensaje}</p>}
   <ul class="lista">
     {estado.map((a) => (

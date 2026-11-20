@@ -3,20 +3,33 @@
 import type { Dia } from '../lib/terapias';
 import { dondeEs } from '../lib/terapias';
 import { diaCorto, nombreDia, rangoHorario, sumarDias, tituloSemana } from '../lib/fechas';
+import type { Hijo } from '../lib/familia';
+import Avatar from './Avatar.astro';
 
-interface Props { lunes: string; hoy: string; dias: Dia[]; hayTerapias: boolean }
-const { lunes, hoy, dias, hayTerapias } = Astro.props;
+interface Props { lunes: string; hoy: string; dias: Dia[]; hayTerapias: boolean; hijos?: Hijo[] }
+const { lunes, hoy, dias, hayTerapias, hijos = [] } = Astro.props;
+// "Agregar evento" abre con hoy si es esta semana; si no, con el lunes (o hoy, si el lunes ya pasó).
+const fechaNueva = hoy >= lunes ? hoy : lunes;
 const anterior = sumarDias(lunes, -7);
 const siguiente = sumarDias(lunes, 7);
 const esEstaSemana = hoy >= lunes && hoy <= sumarDias(lunes, 6);
 ---
 <section class="semana-cabeza">
+  {hijos.length > 0 && (
+    <div class="cabeza-hijos">
+      {hijos.map((h) => <Avatar avatar={h.avatar} nombre={h.nombre} hijo tam={36} />)}
+      <span class="apoyo chico">La semana de {hijos.map((h) => h.nombre).join(' y ')}</span>
+    </div>
+  )}
   <h1 class="titular">{tituloSemana(lunes)}</h1>
   <nav class="semana-pasos" aria-label="Cambiar de semana">
     <a class="boton boton-contorno" href={`/semana?desde=${anterior}`}>← Anterior</a>
     <a class:list={['boton', esEstaSemana ? 'boton-tonal' : 'boton-relleno']} href="/semana" aria-current={esEstaSemana ? 'date' : undefined}>Hoy</a>
     <a class="boton boton-contorno" href={`/semana?desde=${siguiente}`}>Siguiente →</a>
   </nav>
+  <div class="semana-acciones">
+    <a class="boton boton-tonal" href={`/evento?fecha=${fechaNueva}`}>+ Agregar evento</a>
+  </div>
 </section>
 
 {!hayTerapias && (
@@ -30,7 +43,12 @@ const esEstaSemana = hoy >= lunes && hoy <= sumarDias(lunes, 6);
 {dias.map((d) => (
   <section class:list={['dia', { 'dia-hoy': d.fecha === hoy }]} aria-label={nombreDia(d.fecha)}>
     <h2 class="dia-nombre">{nombreDia(d.fecha)}{d.fecha === hoy && ' · Hoy'}</h2>
-    {d.ocurrencias.length === 0 && <p class="dia-vacio">Sin terapias</p>}
+    {(d.todo_el_dia ?? []).map((e) => (
+      <a class="franja-dia" href={`/evento?id=${e.id}`} aria-label={`${e.titulo}, todo el día. Ver o cambiar el evento`}>
+        {e.titulo}<span>Todo el día{e.hijo ? ` · ${e.hijo}` : ''}</span>
+      </a>
+    ))}
+    {d.ocurrencias.length === 0 && (d.todo_el_dia ?? []).length === 0 && <p class="dia-vacio">Sin terapias</p>}
     {d.ocurrencias.map((o) => o.clase === 'terapia' ? (
       <a class:list={['ocurrencia', { 'ocurrencia-cambiada': o.estado === 'cambiado', 'ocurrencia-cancelada': o.estado === 'cancelado' }]}
          href={`/turno?horario=${o.horario_id}&fecha=${o.fecha_turno ?? d.fecha}`}
@@ -41,6 +59,16 @@ const esEstaSemana = hoy >= lunes && hoy <= sumarDias(lunes, 6);
           {o.estado === 'cancelado' && <span class="etiqueta etiqueta-cancelado">No hay</span>}
           {o.estado === 'cambiado' && <span class="etiqueta etiqueta-cambiado">Cambiado · antes {o.original_fecha === d.fecha ? '' : `${diaCorto(o.original_fecha!)} `}{o.original_inicio}</span>}
           <span>{o.profesional} · {dondeEs(o.modalidad, o.lugar)}</span>
+          {o.nota && <span class="ocurrencia-nota">{o.nota}</span>}
+        </span>
+      </a>
+    ) : o.clase === 'evento_fecha' ? (
+      <a class="ocurrencia ocurrencia-fecha" href={`/evento?id=${o.evento_id}`} aria-label={`${o.titulo}, ${o.inicio}. Ver o cambiar el evento`}>
+        <span class="ocurrencia-hora">{o.inicio}</span>
+        <span class="ocurrencia-texto">
+          <strong>{o.titulo}</strong>
+          <span class="etiqueta">Evento</span>
+          <span>{o.hijo ?? 'Toda la familia'}</span>
           {o.nota && <span class="ocurrencia-nota">{o.nota}</span>}
         </span>
       </a>

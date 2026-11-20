@@ -1,0 +1,81 @@
+---
+// Evento con fecha propia (spec 004): `/evento?fecha=AAAA-MM-DD` para agregar, `/evento?id=<uuid>`
+// para editarlo o borrarlo. Cada cambio avisa a todos los adultos de la familia.
+import App from '../layouts/App.astro';
+import FormEvento from '../components/FormEvento.astro';
+import { avisarFamilia } from '../lib/avisar-familia';
+import { claveDeError, textoDeError } from '../lib/errores';
+import { esFechaIso, hoyEnArgentina, lunesDe } from '../lib/fechas';
+import { campo, exigirFamilia, miNombre } from '../lib/sesion';
+import type { EventoFecha } from '../lib/terapias';
+import { avisoEventoFechaBorrado, avisoEventoFechaCambio, avisoEventoFechaNuevo } from '../lib/textos-aviso';
+
+export const prerender = false;
+
+const ctx = await exigirFamilia(Astro);
+if (!ctx.ok) return ctx.respuesta;
+const { supabase, familia } = ctx;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const HORA_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+const hoy = hoyEnArgentina();
+const id = Astro.url.searchParams.get('id');
+const pedida = Astro.url.searchParams.get('fecha');
+const fecha = esFechaIso(pedida) && pedida >= hoy ? pedida : hoy;
+
+let estado: 'ok' | 'no_existe' | 'falla' = 'ok';
+let evento: EventoFecha | null = null;
+if (id !== null) {
+  if (!UUID_RE.test(id)) estado = 'no_existe';
+  else {
+    const r = await supabase.rpc('evento_fecha', { id });
+    if (!r.error) evento = r.data as EventoFecha;
+    else estado = claveDeError(r.error) === 'ajeno' ? 'no_existe' : 'falla';
+  }
+}
+
+let error: string | null = null;
+let valores: Record<string, string | null> = {};
+if (estado === 'ok' && Astro.request.method === 'POST') {
+  const f = await Astro.request.formData();
+  const quien = miNombre(familia);
+  if (f.get('accion') === 'borrar' && evento) {
+    const r = await supabase.rpc('borrar_evento_fecha', { id: evento.id });
+    if (!r.error) {
+      await avisarFamilia(supabase, avisoEventoFechaBorrado(r.data as EventoFecha, quien));
+      return Astro.redirect(`/semana?desde=${lunesDe(evento.fecha)}`, 303);
+    }
+    error = textoDeError(r.error);
+  } else if (f.get('accion') === 'guardar') {
+    const todoElDia = f.get('todo_el_dia') === '1';
+    const hora = todoElDia ? null : campo(f, 'hora');
+    valores = { titulo: campo(f, 'titulo'), fecha: campo(f, 'fecha'), hora, todo_el_dia: todoElDia ? '1' : '0', hijo_id: campo(f, 'hijo_id'), nota: campo(f, 'nota') };
+    const nuevaFecha = valores.fecha;
+    if (!todoElDia && (!hora || !HORA_RE.test(hora))) error = textoDeError({ message: 'hora_invalida' });
+    else if (!esFechaIso(nuevaFecha)) error = textoDeError({ message: 'fecha_pasada' });
+    else {
+      const args = { titulo: valores.titulo, fecha: nuevaFecha, hora, hijo_id: valores.hijo_id, nota: valores.nota };
+      const r = evento
+        ? await supabase.rpc('editar_evento_fecha', { id: evento.id, ...args })
+        : await supabase.rpc('agregar_evento_fecha', args);
+      if (!r.error) {
+        const nuevo = { titulo: (valores.titulo ?? '').trim(), fecha: nuevaFecha, hora };
+        await avisarFamilia(supabase, evento ? avisoEventoFechaCambio(r.data as EventoFecha, nuevo, quien) : avisoEventoFechaNuevo(nuevo, quien));
+        return Astro.redirect(`/semana?desde=${lunesDe(nuevaFecha)}`, 303);
+      }
+      error = textoDeError(r.error);
+    }
+  }
+}
+
+if (estado === 'no_existe') Astro.response.status = 404;
+if (estado === 'falla') Astro.response.status = 503;
+---
+<App titulo={evento?.titulo ?? 'Nuevo evento'} conSesion seccion="semana">
+  {estado === 'ok' && <FormEvento evento={evento} fecha={fecha} hoy={hoy} hijos={familia.hijos} error={error} valores={valores} />}
+  {estado === 'no_existe' && (
+    <section class="tarjeta"><h1 class="titulo">No encontramos ese evento</h1><a class="boton boton-contorno" href="/semana">Ir a la semana</a></section>
+  )}
+  {estado === 'falla' && (
+    <section class="tarjeta"><h1 class="titulo">Algo falló</h1><p class="apoyo">No pudimos cargar el evento. Probá de nuevo en un rato.</p></section>
+  )}
+</App>
