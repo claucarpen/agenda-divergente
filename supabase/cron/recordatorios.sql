@@ -4,7 +4,7 @@
 -- En el SQL Editor de Supabase: reemplazar :'secreto' y :'url' por los valores, entre comillas simples.
 
 create extension if not exists pg_cron;
-create extension if not exists pg_net;
+create extension if not exists pg_net with schema extensions;  -- fuera de `public` (lint 0014 de Supabase)
 
 -- El mismo secreto que `CRON_SECRET` de Vercel. `tomar_recordatorios` lo compara con este.
 insert into public.config_privada (clave, valor) values ('cron_secret', :'secreto')
