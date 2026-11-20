@@ -1,5 +1,5 @@
 ---
-status: borrador
+status: aprobada
 depends_on: [003]
 ---
 
@@ -177,11 +177,11 @@ Los deterministas se agregan a `evals/run.sh`. **Los de la 001 a la 003 siguen y
 - DECIDIDO por Claudio (2026-11-19): avatares ilustrados elegidos de una galería, sin subir fotos;
   la regla `[datos]` no cambia.
 
-### Propuestas para que Claudio confirme al aprobar
-
-- El recordatorio del día anterior sale a las **20:00**.
-- Los avatares son para **cada adulto y cada hijo**; cada adulto elige el suyo y el de los hijos.
-- Cada adulto puede **apagar sus recordatorios** con un interruptor; vienen prendidos.
+- DECIDIDO por Claudio (2026-11-19, al aprobar): el recordatorio del día anterior sale a las 20:00.
+- DECIDIDO por Claudio (2026-11-19, al aprobar): avatares para cada adulto y cada hijo; cada adulto
+  elige el suyo y el de los hijos.
+- DECIDIDO por Claudio (2026-11-19, al aprobar): cada adulto puede apagar sus recordatorios; vienen
+  prendidos.
 
 ### Las decide quien implementa
 
